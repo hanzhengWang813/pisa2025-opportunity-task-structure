@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""02 变量构造 + AI 使用模式的维度结构检验"""
+"""Construct the analysis variables and test the dimensional structure of AI use.
+
+Builds the AI-use intensity score, the four use-purpose items, the student
+covariates and the school-level aggregates; writes data/qci_analysis.parquet.
+"""
 import pandas as pd, numpy as np, pickle, os, json, warnings
 warnings.filterwarnings('ignore')
 from scipy import stats
@@ -23,20 +27,20 @@ for c in q.columns:
             if mask.any():
                 q.loc[mask, c] = np.nan
                 n_clean += int(mask.sum())
-print('清理缺失码单元格数:', n_clean)
+print('Missing-code cells cleaned:', n_clean)
 
-# 额外：ST436 系列有效值为 1-4
+# additionally: ST436 items are valid on 1-4
 for c in [x for x in q.columns if x.startswith('ST436Q')]:
     q.loc[q[c] > 4, c] = np.nan
 
 AI = ['ST438Q01DA','ST438Q02DA','ST438Q03DA','ST438Q04DA']
 
-# ============ 维度结构检验 ============
+# ============ Dimensional structure test ============
 print('\n' + '='*60)
-print('AI 使用模式维度结构检验')
+print('Dimensional structure of AI use patterns')
 print('='*60)
 d = q[AI].dropna()
-print('完整案例 n =', len(d))
+print('Complete cases n =', len(d))
 
 # 1. KMO & Bartlett
 from factor_analyzer.factor_analyzer import calculate_kmo, calculate_bartlett_sphericity
@@ -44,7 +48,7 @@ kmo_all, kmo_model = calculate_kmo(d)
 chi2, p = calculate_bartlett_sphericity(d)
 print(f'KMO = {kmo_model:.3f} | Bartlett chi2={chi2:.1f}, p={p:.3g}')
 
-# 2. 特征值 + 平行分析
+# 2. eigenvalues + parallel analysis
 R = d.corr().values
 ev = np.sort(np.linalg.eigvalsh(R))[::-1]
 rng = np.random.default_rng(42)
@@ -54,12 +58,12 @@ for _ in range(500):
     Rs = np.corrcoef(X, rowvar=False)
     sim.append(np.sort(np.linalg.eigvalsh(Rs))[::-1])
 sim = np.array(sim)
-print(f'特征值: {np.round(ev,3)}')
-print(f'平行分析 95 分位随机特征值: {np.round(np.percentile(sim,95,axis=0),3)}')
-print(f'建议保留因子数(平行分析): {(ev > np.percentile(sim,95,axis=0)).sum()}')
-print(f'方差解释率(第1因子): {ev[0]/4*100:.1f}%')
+print(f'Eigenvalues: {np.round(ev,3)}')
+print(f'Parallel analysis, 95th percentile of random eigenvalues: {np.round(np.percentile(sim,95,axis=0),3)}')
+print(f'Factors suggested by parallel analysis: {(ev > np.percentile(sim,95,axis=0)).sum()}')
+print(f'Variance explained (factor 1): {ev[0]/4*100:.1f}%')
 
-# 3. CFA 模型比较
+# 3. CFA model comparison
 import semopy
 def cfa(desc, data):
     m = semopy.Model(desc)
@@ -69,50 +73,50 @@ def cfa(desc, data):
     return {k: float(vals.get(k, np.nan)) for k in ['CFI','TLI','RMSEA','SRMR','AIC','BIC','chi2','DoF']}, m
 res = {}
 for name, desc in [
-    ('单因子(使用强度)', 'F =~ ST438Q01DA + ST438Q02DA + ST438Q03DA + ST438Q04DA'),
-    ('双因子A 代写vs辅助', 'F1 =~ ST438Q03DA\nF2 =~ ST438Q02DA + ST438Q04DA + ST438Q01DA'),
-    ('双因子B 文本vs探究', 'F1 =~ ST438Q01DA + ST438Q03DA\nF2 =~ ST438Q02DA + ST438Q04DA'),
+    ('one factor (use intensity)', 'F =~ ST438Q01DA + ST438Q02DA + ST438Q03DA + ST438Q04DA'),
+    ('two factors A: ghost-writing vs support', 'F1 =~ ST438Q03DA\nF2 =~ ST438Q02DA + ST438Q04DA + ST438Q01DA'),
+    ('two factors B: text vs inquiry', 'F1 =~ ST438Q01DA + ST438Q03DA\nF2 =~ ST438Q02DA + ST438Q04DA'),
 ]:
     try:
         r, mm = cfa(desc, d)
         res[name] = r
     except Exception as e:
         res[name] = {'err': str(e)[:60]}
-print('\nCFA 模型比较:')
+print('\nCFA model comparison:')
 print(pd.DataFrame(res).T.round(3).to_string())
 
-# 4. 信度
+# 4. reliability
 def alpha(X):
     k = X.shape[1]; return k/(k-1)*(1 - X.var(ddof=1).sum()/X.sum(axis=1).var(ddof=1))
-print(f'\nCronbach α (四题单维) = {alpha(d):.3f}')
+print(f'\nCronbach alpha (four items, unidimensional) = {alpha(d):.3f}')
 def sb2(r): return 2*r/(1+r)
-print(f'Spearman-Brown 深化型(Q02,Q04) = {sb2(d.ST438Q02DA.corr(d.ST438Q04DA)):.3f}')
-print(f'Spearman-Brown 替代型(Q01,Q03) = {sb2(d.ST438Q01DA.corr(d.ST438Q03DA)):.3f}')
+print(f'Spearman-Brown deep use (Q02,Q04) = {sb2(d.ST438Q02DA.corr(d.ST438Q04DA)):.3f}')
+print(f'Spearman-Brown substitutive use (Q01,Q03) = {sb2(d.ST438Q01DA.corr(d.ST438Q03DA)):.3f}')
 
-# ============ 构造变量 ============
-q['AI_deep'] = q[['ST438Q02DA','ST438Q04DA']].mean(axis=1)      # 深化型：查资料+帮学习
-q['AI_sub']  = q[['ST438Q01DA','ST438Q03DA']].mean(axis=1)      # 替代型：概括文本+写初稿
-q['AI_total']= q[AI].mean(axis=1)                                # 使用强度
-z = lambda s: (s - q.AI_total.mean())/q.AI_total.std()           # 占位, 下面重算
+# ============ Construct the variables ============
+q['AI_deep'] = q[['ST438Q02DA','ST438Q04DA']].mean(axis=1)      # deep use: research + study help
+q['AI_sub']  = q[['ST438Q01DA','ST438Q03DA']].mean(axis=1)      # substitutive use: summarise text + draft
+q['AI_total']= q[AI].mean(axis=1)                                # use intensity
+z = lambda s: (s - q.AI_total.mean())/q.AI_total.std()           # placeholder, recomputed below
 mu, sd = q.AI_deep.mean(), q.AI_deep.std()
 q['AI_bal'] = (q.AI_deep - q.AI_sub) / q[['ST438Q02DA','ST438Q04DA','ST438Q01DA','ST438Q03DA']].stack().std()
 
-# 数字素养：批判性评估（线上信息 + AI输出）
+# Digital literacy: critical evaluation (online information + AI output)
 q['DL_info'] = q['ST436Q02DA']
 q['DL_ai']   = q['ST436Q16DA']
 dl = q[['DL_info','DL_ai']].dropna()
-print(f'\nDL_info 与 DL_ai 相关 r = {dl.DL_info.corr(dl.DL_ai):.3f}, n={len(dl)}')
+print(f'\nDL_info and DL_ai correlation r = {dl.DL_info.corr(dl.DL_ai):.3f}, n={len(dl)}')
 qz = (q[['DL_info','DL_ai']] - q[['DL_info','DL_ai']].mean()) / q[['DL_info','DL_ai']].std()
 q['DL_crit'] = qz.mean(axis=1)
-q['DL_high'] = (q.DL_ai >= 3).astype(float).where(q.DL_ai.notna())   # 经常/非常频繁评估AI输出
+q['DL_high'] = (q.DL_ai >= 3).astype(float).where(q.DL_ai.notna())   # often / very often evaluates AI output
 
-# 结果与协变量
+# Outcomes and covariates
 q['female'] = (q['ST004D01T']==1).astype(float)
 q['SES']    = q['ESCS']
 q['REPEAT_bin'] = (q['REPEAT']>0).astype(float).where(q['REPEAT'].notna())
-print('\n核心变量描述:')
+print('\nDescriptive statistics for the core variables:')
 cols=['AI_total','AI_deep','AI_sub','AI_bal','DL_crit','DL_ai','DL_info','DL_high','SES','female','PV1SCIE']
 print(q[cols].describe().T[['count','mean','std','min','max']].round(3).to_string())
 
 q.to_parquet(os.path.join(BASE,'data','qci_analysis.parquet'), index=False)
-print('\n已保存 data/qci_analysis.parquet', q.shape)
+print('\nSaved data/qci_analysis.parquet', q.shape)

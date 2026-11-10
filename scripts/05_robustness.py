@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""05 稳健性检验：共线性 / 阈值组特征 / 替代测量"""
+"""Robustness checks: collinearity, threshold-group profiles, alternative measures.
+"""
 import pandas as pd, numpy as np, os, warnings
 from scipy import stats
 warnings.filterwarnings('ignore')
@@ -54,8 +55,8 @@ need=list(dict.fromkeys(BASE_COV+DISP+CLAS+ICT+SCH+['AI_total','AI_deep','AI_sub
 need=[c for c in need if c in q.columns]
 s=q.dropna(subset=need+['PV1SCIE']).copy()
 
-# ---------- 1. 共线性 ----------
-print('='*66); print('1. 共线性诊断 (C1 模型)'); print('='*66)
+# ---------- 1. Collinearity ----------
+print('='*66); print('1. Collinearity diagnostics (C1 model)'); print('='*66)
 X,names=build(s,FULL+['AI_deep_z','AI_sub_z'])
 Xz=X[:,1:]; nz=names[1:]
 vif=[]
@@ -67,21 +68,21 @@ v=pd.DataFrame(vif,columns=['变量','VIF']).sort_values('VIF',ascending=False)
 print(v[v.变量.isin(['AI_deep_z','AI_sub_z','escs','ICTINFO_z'])].to_string(index=False))
 print('最大 VIF = %.2f (%s)'%(v.VIF.max(), v.iloc[0].变量))
 
-# ---------- 2. 阈值组特征 ----------
-print('\n'+'='*66); print('2. 「每天使用」组特征（是否异常亚群）'); print('='*66)
+# ---------- 2. Profile of the threshold group ----------
+print('\n'+'='*66); print('2. Profile of the "daily use" group (is it an anomalous subgroup?)'); print('='*66)
 def cmp(col):
     a=s.loc[s.AI_grp==5,col].dropna(); b=s.loc[s.AI_grp<5,col].dropna()
     if len(a)==0: return np.nan, np.nan
     return (np.average(a.values, weights=s.loc[a.index,'W_FSTUWT'].values),
             np.average(b.values, weights=s.loc[b.index,'W_FSTUWT'].values))
-for c,lab in [('ESCS','家庭ESCS'),('female','女性比例'),('grade','年级'),('ICTWKDY','平日ICT使用'),
-              ('SELFREG','自我调节'),('JOYSCIE','科学兴趣'),('REPEAT','留级比例'),
-              ('SCH_ESCS','学校平均ESCS')]:
+for c,lab in [('ESCS','family ESCS'),('female','share female'),('grade','grade'),('ICTWKDY','weekday ICT use'),
+              ('SELFREG','self-regulation'),('JOYSCIE','interest in science'),('REPEAT','share repeating a grade'),
+              ('SCH_ESCS','school mean ESCS')]:
     if c in s.columns:
-        a,b=cmp(c); print(f'  {lab:12s} 每天组={a:6.2f}  其余组={b:6.2f}  差={a-b:+6.2f}')
+        a,b=cmp(c); print(f'  {lab:12s} daily={a:6.2f}  others={b:6.2f}  diff={a-b:+6.2f}')
 
-# ---------- 3. 稳健性：替代测量与设定 ----------
-print('\n'+'='*66); print('3. 稳健性检验'); print('='*66)
+# ---------- 3. Robustness: alternative measures and specifications ----------
+print('\n'+'='*66); print('3. Robustness checks'); print('='*66)
 s['AI_q04_grp']=s.ST438Q04DA.round()
 s['AI_high']=(s.AI_total>4.5).astype(float)
 s['AI_sq']=s.AI_total_z**2
@@ -89,12 +90,12 @@ rows=[]
 rows.append(run(s,'SCIE',FULL+['AI_g2','AI_g3','AI_g4','AI_g5'],'R1 基准(四题均值分组)'))
 rows.append(run(s,'SCIE',FULL+['AI_high'],'R2 仅「每天」二分类'))
 rows.append(run(s,'SCIE',FULL+['AI_total_z','AI_sq'],'R3 线性+二次'))
-# R4: 只用 Q03 (写初稿) 与 Q02 (查资料) 的单题
+# R4: single items only, Q03 (draft writing) and Q02 (research)
 rows.append(run(s,'SCIE',FULL+['ST438Q02DA','ST438Q03DA'],'R4 单题(查资料/写初稿)'))
-# R5: 排除每天组后线性是否仍存在
+# R5: does the linear term survive once the daily group is excluded?
 s_no5=s[s.AI_grp<5]
 rows.append(run(s_no5,'SCIE',FULL+['AI_total_z'],'R5 剔除每天组后的线性项'))
-# R6: 用 SENWT 群体权重
+# R6: population weights (SENWT)
 s2=s.copy(); s2['W_FSTUWT_save']=s2.W_FSTUWT
 rows.append(run(s2,'SCIE',FULL+['AI_total_z'],'R6 线性项(正文模型)'))
 res=pd.concat(rows,ignore_index=True)
@@ -106,9 +107,9 @@ for lab in res.model.unique():
         print(f'  {w.term:12s} b={w.b:8.2f} se={w.se:6.2f} p={w.p:.4f}{st}')
 res.to_csv(os.path.join(BASE,'outputs','robustness.csv'),index=False,encoding='utf-8-sig')
 
-# ---------- 4. 分位数回归视角：剔除极端 ----------
-print('\n'+'='*66); print('4. 影响诊断：每天组内成绩分布'); print('='*66)
+# ---------- 4. Influence diagnostics: drop the extremes ----------
+print('\n'+'='*66); print('4. Influence diagnostics: score distribution inside the daily group'); print('='*66)
 d5=s[s.AI_grp==5]
-print('  每天组 n=%d, SCIE 均值=%.1f, 中位数=%.1f, P10=%.1f, P90=%.1f'%(
+print('  daily group n=%d, SCIE mean=%.1f, median=%.1f, P10=%.1f, P90=%.1f'%(
     len(d5), d5.PV1SCIE.mean(), d5.PV1SCIE.median(), d5.PV1SCIE.quantile(.1), d5.PV1SCIE.quantile(.9)))
-print('  其余组 n=%d, SCIE 均值=%.1f, 中位数=%.1f'%(len(s)-len(d5), s[s.AI_grp<5].PV1SCIE.mean(), s[s.AI_grp<5].PV1SCIE.median()))
+print('  other groups n=%d, SCIE mean=%.1f, median=%.1f'%(len(s)-len(d5), s[s.AI_grp<5].PV1SCIE.mean(), s[s.AI_grp<5].PV1SCIE.median()))

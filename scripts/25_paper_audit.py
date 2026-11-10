@@ -1,17 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-25. 论文数值溯源与复现核验
+"""Number-by-number provenance and reproduction audit of the manuscript.
 
-对论文《学校效应的作用边界》中出现的每一个数值，给出：
-  来源脚本、来源文件、匹配键、复算值、与论文值的差值、判定
-
-判定口径：
-  A 级 = 已存输出文件可直接核验（读文件即得）
-  B 级 = 原为脚本运行时打印、未落盘，本脚本重新计算并补落盘
-  C 级 = 文献引用值，非本研究数据，不需复现
-
-输出：outputs/paper_number_audit.csv
-      outputs/fig9_coefs.csv（表 3 的数字基础条件系数，此前仅存在于绘图脚本内存中）
+For every number printed in the paper this script reports the source script,
+the source file, the matching key, the recomputed value, the difference from
+the printed value, and a verdict.
 """
 import os
 import sys
@@ -28,8 +20,8 @@ OUT = os.path.join(BASE, 'outputs')
 
 q = pd.read_parquet(os.path.join(BASE, 'data/qci_school.parquet'))
 W = q['W_FSTUWT'].values
-T = {}          # key -> 复算值
-NOTE = {}       # key -> 补充说明
+T = {}          # key -> recomputed value
+NOTE = {}       # key -> supplementary note
 
 
 def wmean(s):
@@ -48,7 +40,7 @@ def wshare(mask, base):
     return float(np.average(mask.values[m].astype(float), weights=W[m]))
 
 
-# ============================================================ 1 描述统计
+# ============================================================ 1 Descriptive statistics
 for col in ['PV1SCIE', 'ESCS', 'ICTWKDY', 'ICTHOME', 'AI_total', 'JOYSCIE',
             'EFFSCIE', 'SELFREG', 'COGACSC', 'TEACHSUP', 'DISCLISCI']:
     T[f'd_{col}_mean'] = wmean(q[col])
@@ -61,23 +53,23 @@ T['d_repeat'] = wshare((q['REPEAT'] > 0).astype(float).where(q['REPEAT'].notna()
 T['n_stu'] = len(q)
 T['n_sch'] = int(q['CNTSCHID'].nunique())
 
-# 四类用途"每天"占比
+# Share answering "every day" on each of the four uses
 for c in ['ST438Q01DA', 'ST438Q02DA', 'ST438Q03DA', 'ST438Q04DA']:
     s = q[c].where(q[c] < 95)
     T[f'd_daily_{c}'] = wshare((s == 5).astype(float).where(s.notna()), s)
 
-# 全用途饱和
+# Full-use saturation
 IT = ['ST438Q01DA', 'ST438Q02DA', 'ST438Q03DA', 'ST438Q04DA']
 ai = q[IT].where(q[IT] < 95)
-q['_daily'] = (q['AI_total'].round() >= 5).astype(float)   # 与脚本 21 一致"
-q['_sat'] = (ai.eq(5).sum(axis=1) == 4).astype(float)     # 四题全满分
+q['_daily'] = (q['AI_total'].round() >= 5).astype(float)   # consistent with script 21
+q['_sat'] = (ai.eq(5).sum(axis=1) == 4).astype(float)     # all four items at the top category
 daily_n = int((q['_daily'] == 1).sum())
 sat_n = int((q['_sat'] == 1).sum())
 T['sat_pct'] = sat_n / daily_n * 100
 T['sat_n'] = sat_n
 T['sat_den'] = daily_n
 
-# 校层构念描述（来自 school_constructs.csv，A 级）
+# School-level construct descriptives (from school_constructs.csv, grade A)
 sc = pd.read_csv(os.path.join(OUT, 'school_constructs.csv'))
 for _, r in sc.iterrows():
     T[f'sc_{r.construct}_mean'] = r['mean']
@@ -86,12 +78,12 @@ T['sc_DIGCOND_miss'] = (374 - sc.loc[sc.construct == 'A_DIGCOND', 'n'].iloc[0]) 
 T['sc_RULES_miss'] = (374 - sc.loc[sc.construct == 'D_RULES', 'n'].iloc[0]) / 374 * 100
 T['sc_BAN_miss'] = (374 - sc.loc[sc.construct == 'D_BAN', 'n'].iloc[0]) / 374 * 100
 
-# 学校规模
+# School size
 g = q.groupby('CNTSCHID').size()
 T['sch_min'], T['sch_med'], T['sch_max'] = int(g.min()), int(g.median()), int(g.max())
 T['sch_le5'] = int((g <= 5).sum())
 
-# ============================================================ 2 量表信度
+# ============================================================ 2 Scale reliability
 X = q[IT].where(q[IT] < 95).dropna()
 k = X.shape[1]
 alpha = k / (k - 1) * (1 - X.var().sum() / X.sum(axis=1).var())
@@ -116,7 +108,7 @@ T['ai_AVE'] = float(np.mean(lam ** 2))
 T['ai_lam_min'] = float(lam.min())
 T['ai_lam_max'] = float(lam.max())
 
-# 校层构念信度：校均值的组内相关（ICC1）与校层信度 λ
+# School-level construct reliability: intraclass correlation (ICC1) of school means and school-level reliability λ
 COMP = {'COGACSC': '认知激活', 'DISCLISCI': '纪律氛围', 'SELFREG': '自我调节', 'JOYSCIE': '科学兴趣'}
 rel_rows = []
 for c in COMP:
@@ -127,7 +119,7 @@ for c in COMP:
     msb = sum(len(x) * (x.mean() - grand) ** 2 for x in grp) / (len(grp) - 1)
     msw = sum(((x - x.mean()) ** 2).sum() for x in grp) / (len(d) - len(grp))
     icc1 = (msb - msw) / (msb + (nbar - 1) * msw)
-    rel = (msb - msw) / msb          # 校均值信度 λ
+    rel = (msb - msw) / msb          # reliability of the school mean, λ
     rel_rows.append(dict(component=c, n_school=len(grp), nbar=round(nbar, 1),
                          icc1=round(icc1, 4), reliability=round(rel, 4)))
     T[f'rel_{c}'] = float(rel)
@@ -138,7 +130,7 @@ _sm = q.groupby('CNTSCHID')[list(COMP)].mean().dropna()
 _ks = _sm.shape[1]
 T['clim_alpha_mean'] = float(_ks / (_ks - 1) * (1 - _sm.var().sum() / _sm.sum(axis=1).var()))
 
-# ============================================================ 3 相关系数
+# ============================================================ 3 Correlations
 s_lv = q.groupby('CNTSCHID').agg(A=('A_DIGCOND', 'mean'), B=('B_TCHCAP', 'mean'),
                                  AI=('AI_total', 'mean'), ESCS=('SCH_MEAN_ESCS', 'first'),
                                  COG=('COGACSC', 'mean')).dropna()
@@ -146,7 +138,7 @@ T['r_AB'] = float(s_lv[['A', 'B']].corr().iloc[0, 1])
 T['r_AI_ESCS'] = float(s_lv[['AI', 'ESCS']].corr().iloc[0, 1])
 T['r_AI_COG'] = float(s_lv[['AI', 'COG']].corr().iloc[0, 1])
 
-# ============================================================ 4 两层模型阶梯
+# ============================================================ 4 Two-level model ladder
 ld = pd.read_csv(os.path.join(OUT, 'mlm_ladder.csv'))
 var = ld[ld.term == '__var__'].set_index('model')
 for m in var.index:
@@ -170,7 +162,7 @@ T['lrt_min'] = float(lrt['LR'].min())
 T['lrt_max'] = float(lrt['LR'].max())
 T['lrt_pmax'] = float(lrt['p'].max())
 
-# 氛围单变量模型的方差变化（mlm_variance.csv，另一设定）
+# Variance change in the climate-only model (mlm_variance.csv, alternative specification)
 mv = pd.read_csv(os.path.join(OUT, 'mlm_variance.csv')).set_index('model')
 T['mv_tau00_rand'] = float(mv.loc['+AI 随机斜率', 'tau00'])
 T['mv_tau00_clim'] = float(mv.loc['+学校氛围', 'tau00'])
@@ -178,7 +170,7 @@ T['mv_icc_rand'] = float(mv.loc['+AI 随机斜率', 'icc'])
 T['mv_icc_clim'] = float(mv.loc['+学校氛围', 'icc'])
 T['mv_drop_pct'] = (T['mv_tau00_rand'] - T['mv_tau00_clim']) / T['mv_tau00_rand'] * 100
 
-# ============================================================ 5 学校层主效应
+# ============================================================ 5 School-level main effects
 sm = pd.read_csv(os.path.join(OUT, 'school_main.csv'))
 for term, key in [('SCH_MEAN_ESCS_z', 'escs'), ('SCH_CLIM_z', 'clim'),
                   ('C_DIGPURP_z', 'purp'), ('D_RULES_z', 'rules'),
@@ -190,7 +182,7 @@ for term, key in [('SCH_MEAN_ESCS_z', 'escs'), ('SCH_CLIM_z', 'clim'),
         r = r.iloc[0]
         T[f's_{key}_b'], T[f's_{key}_se'], T[f's_{key}_p'] = r.b, r.se, r.p
 
-# 数字基础条件（7 题合成）—— B 级：此前仅在绘图脚本内存中
+# Digital infrastructure (7-item composite) — grade B: previously existed only in figure-script memory
 r2 = pd.read_csv(os.path.join(OUT, 'school_r2.csv'))
 T['dr2_school'] = float(r2.loc[r2.outcome == 'SCIE', 'dR2_school'].iloc[0])
 
@@ -226,7 +218,7 @@ row = dgb[dgb.term == 'DIGBASE_z'].iloc[0]
 T['s_base_b'], T['s_base_se'], T['s_base_p'] = row.b, row.se, row.p
 T['n_digbase'] = len(s4)
 
-# 抑制诊断（B 级：此前仅打印）
+# Suppression diagnostics (grade B: previously printed only)
 s_sup = qq.dropna(subset=STU2 + ['AIz', 'W_FSTUWT'] + ['A_DIGCOND_z', 'B_TCHCAP_z']).copy()
 sep1 = PISAEngine(s_sup, 'PV', 'SCIE').fit(STU2 + ['AIz', 'A_DIGCOND_z'], 'A_only')
 sep2 = PISAEngine(s_sup, 'PV', 'SCIE').fit(STU2 + ['AIz', 'B_TCHCAP_z'], 'B_only')
@@ -246,7 +238,7 @@ s_org = qq.dropna(subset=STU2 + ['AIz', 'W_FSTUWT', 'G_DIGORG_z']).copy()
 org1 = PISAEngine(s_org, 'PV', 'SCIE').fit(STU2 + ['AIz', 'G_DIGORG_z'], 'ORG_only')
 T['org_sep'], T['org_sep_p'] = org1[ org1.term == 'G_DIGORG_z'].b.iloc[0], org1[org1.term == 'G_DIGORG_z'].p.iloc[0]
 
-# ============================================================ 6 调节扫描
+# ============================================================ 6 Moderator scan
 NAME = {
     'A 数字条件': '数字条件（设备/带宽/软件）',
     'B 教师能力时间': '教师技术能力与备课时间',
@@ -299,7 +291,7 @@ for lab, key in [('科学教师培训（校方报告）', 'tr'), ('校内手机�
     T[f'mod_{key}_b'], T[f'mod_{key}_se'], T[f'mod_{key}_p'] = r.b_int, r.se_int, r.p_int
 T['mod_rules_q'] = float(ms[ms.lab == '数字使用规范（师生共定）'].p_fdr.iloc[0])
 
-# ============================================================ 7 层别识别
+# ============================================================ 7 Level identification
 li = pd.read_csv(os.path.join(OUT, 'level_id.csv'))
 
 
@@ -327,7 +319,7 @@ for model, term, key in [('SCIE|D1 交互 单层', 'AIzxCLIM', 'd1'),
     b_, s_, p_ = g(model, term)
     T[f'eco_{key}_b'], T[f'eco_{key}_se'], T[f'eco_{key}_p'] = b_, s_, p_
 
-# 四用途
+# Four uses
 uw = pd.read_csv(os.path.join(OUT, 'uses_within.csv'))
 USE = {'ciz_ST438Q01DA': ('sum', '总结阅读材料'), 'ciz_ST438Q02DA': ('res', '初步研究新主题'),
        'ciz_ST438Q03DA': ('draft', '起草写作'), 'ciz_ST438Q04DA': ('help', '帮助学习')}
@@ -338,17 +330,17 @@ for term, (key, _) in USE.items():
             T[f'use_{key}_{tag}_b'] = r.b.iloc[0]
             T[f'use_{key}_{tag}_se'] = r.se.iloc[0]
             T[f'use_{key}_{tag}_p'] = r.p.iloc[0]
-print('uses_within 模型:', uw.model.unique())
+print('uses_within models:', uw.model.unique())
 
-# 样本量
+# Sample sizes
 li_n = {}
 for m in li.model.unique():
     li_n[m] = None
 T['n_levelid'] = li.attrs.get('n', None)
 
-# ============================================================ 8 清单与比对
+# ============================================================ 8 Checklist and comparison
 CHECKS = [
-    # (位置, 论文表述, 键, 论文值, 容差, 级, 脚本, 文件, 匹配键)
+    # (location, paper wording, key, paper value, tolerance, grade, script, file, match key)
     ('摘要/三(一)', '学生数 12,385', 'n_stu', 12385, 0, 'A', '01_extract_qci.py', 'data/qci_school.parquet', 'len(df)'),
     ('摘要/三(一)', '学校数 374', 'n_sch', 374, 0, 'A', '01_extract_qci.py', 'data/qci_school.parquet', 'CNTSCHID nunique'),
 
@@ -549,13 +541,13 @@ aud = pd.DataFrame(rows)
 aud.to_csv(os.path.join(OUT, 'paper_number_audit.csv'), index=False, encoding='utf-8-sig')
 
 bad = aud[aud.判定 != '一致']
-print('核验项数：', len(aud), '| 一致：', (aud.判定 == '一致').sum(),
-      '| 偏差：', (aud.判定 == '偏差').sum(), '| 缺少：', (aud.判定 == '缺少复算').sum())
+print('checks:', len(aud), '| match:', (aud.判定 == '一致').sum(),
+      '| deviation:', (aud.判定 == '偏差').sum(), '| missing:', (aud.判定 == '缺少复算').sum())
 if len(bad):
-    print('\n=== 需要修正的项 ===')
+    print('\n=== Items that need correction ===')
     print(bad[['位置', '论文表述', '论文值', '复算值', '差值', '来源文件']].to_string(index=False))
 
-print('\n=== 关键复算值（备用） ===')
+print('\n=== Key recomputed values (reference) ===')
 for k in ['slope_sd', 'slope_mean', 'slope_lo_95', 'slope_hi_95', 'slope_lo_1sd', 'slope_hi_1sd',
           'mde', 'rel_min', 'ai_alpha', 'ai_CR', 'ai_AVE', 'digbase_alpha', 'n_digbase',
           'r_AB', 'r_AI_ESCS', 'r_AI_COG', 'sat_pct', 'mod_neg', 'mod_se_min', 'mod_se_max']:

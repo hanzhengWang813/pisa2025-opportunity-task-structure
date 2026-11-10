@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-"""10 干预杠杆图（fig5）：把可干预因素放在同一标尺上排序
-仅纳入经多设定检验方向稳定的变量；抑制效应变量（ICTINFO、ICTQUAL）已排除。
+"""Figure 5: rank the intervention levers on a common scale.
+
+Only predictors whose sign is stable across specifications are retained;
+suppressor variables (ICTINFO, ICTQUAL) are excluded.
 """
 import pandas as pd, numpy as np, os
 import matplotlib
@@ -20,7 +22,7 @@ plt.rcParams['axes.unicode_minus'] = False
 r = pd.read_csv(os.path.join(OUT, 'levers_regression.csv'))
 c = r[r.model == 'L0 全模型'].set_index('term')
 
-# 责任主体 → 颜色
+# actor responsible -> colour
 GROUPS = {
     'AI 使用方式': ('#A32D2D', ['AI_CONTRAST_z', 'AI_total_z']),
     '学生心理资源': ('#2F6F8F', ['EFFSCIE_z', 'SELFREG_z', 'JOYSCIE_z']),
@@ -84,5 +86,5 @@ plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig5_levers.png'), dpi=200, bbox_inches='tight',
             facecolor='white')
 plt.close()
-print('fig5 已生成')
+print('fig5 written')
 print(df[['lab', 'span', 'span_se', 'p']].round(2).to_string(index=False))

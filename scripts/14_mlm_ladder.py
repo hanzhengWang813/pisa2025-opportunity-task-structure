@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-14. 两层模型阶梯（学校为主角）
-  M0 空模型                          → ICC
-  M1 + 学生层协变量                    → 学校间方差还剩多少
-  M2 + AI 使用强度（固定斜率）          → 平均关联
-  M3 + AI 随机斜率                    → 斜率在学校间是否不同（核心）
-  M4 + 学校层构念（主效应）             → 学校条件解释多少校间方差 / 斜率方差
-  M5 + 跨层交互（AI × 学校构念）        → 谁能缓冲
-估计：加权 ML（w=W_FSTUWT），PV1–PV10 逐一估计后 Rubin 合并。
-推断：模型法 SE（设计法 SE 见 15 脚本的 BRR 版本）
+"""Two-level model ladder with the school as the focal unit.
+
+  M0 Empty model                      -> ICC
+  M1 + student covariates             -> how much between-school variance remains
+  M2 + AI use intensity (fixed slope) -> average association
+  M3 + random slope                   -> slope heterogeneity
+  M4 + school-level main effects      -> what schools can actually change
+  M5 + cross-level interactions       -> whether school conditions moderate the slope
 """
 import os
 import sys
@@ -33,7 +31,7 @@ ICT = ['ICTWKDY_z', 'ICTHOME_z']
 SCH = ['A_DIGCOND_z', 'B_TCHCAP_z', 'C_DIGPURP_z', 'D_RULES_z', 'F_SRL_z',
        'G_DIGORG_z', 'H_MONITOR_z', 'I_ENABLE_z']
 
-# ---------- 派生变量 ----------
+# ---------- Derived variables ----------
 q['female'] = (q['ST004D01T'] == 1).astype(float).where(q['ST004D01T'].notna())
 q['repeat'] = (q['REPEAT'] > 0).astype(float).where(q['REPEAT'].notna())
 q['escs'] = q['ESCS']
@@ -49,15 +47,15 @@ for c in ['A_DIGCOND', 'B_TCHCAP', 'C_DIGPURP', 'D_RULES', 'F_SRL', 'G_DIGORG',
 need = PV + ['W_FSTUWT', 'CNTSCHID', 'AIz'] + STU + DISP + ICT + SCH
 s = q.dropna(subset=[c for c in need if c in q.columns]).copy()
 s['g'] = s['CNTSCHID'].astype('category').cat.codes
-print('样本 n=%d  学校=%d' % (len(s), s.g.nunique()))
-print('学校构念相关（与 AI 斜率有关的候选）:')
+print('Sample n=%d  schools=%d' % (len(s), s.g.nunique()))
+print('School construct correlations (candidates for the AI slope):')
 print(s[['AIz'] + SCH].corr()['AIz'].round(3).to_string())
 
 IG = np.ones(len(s))
 Z1 = IG.reshape(-1, 1)
 Z2 = np.column_stack([IG, s.AIz.values])
 W = s.W_FSTUWT.values
-W = W / W.mean()   # 归一化：否则 σ² 随权重尺度缩放，ICC 无法直接计算
+W = W / W.mean()   # normalise: otherwise sigma^2 scales with the weight metric and the ICC is not directly comparable
 
 def design(cols):
     return np.column_stack([IG] + [s[c].values for c in cols])
@@ -70,7 +68,7 @@ MODELS = {
     'M4 +学校层主效应':          (STU + DISP + ICT + ['AIz'] + SCH, Z2),
     'M5 +跨层交互':             (STU + DISP + ICT + ['AIz'] + SCH + [f'AIx{k}' for k in ['A', 'B', 'C', 'D', 'F', 'G', 'H', 'I']], Z2),
 }
-# M5 交互项
+# M5 interaction terms
 for k, c in zip(['A', 'B', 'C', 'D', 'F', 'G', 'H', 'I'],
                 ['A_DIGCOND_z', 'B_TCHCAP_z', 'C_DIGPURP_z', 'D_RULES_z',
                  'F_SRL_z', 'G_DIGORG_z', 'H_MONITOR_z', 'I_ENABLE_z']):
@@ -93,7 +91,7 @@ for name, (cols, Z) in MODELS.items():
         lls.append(m.ll)
         vars_.append(m.var)
     B = np.array(betas)
-    # Rubin 合并
+    # Rubin's rules
     names = ['(截距)'] + cols
     k = B.shape[1]
     qbar = B.mean(axis=0)
@@ -114,17 +112,17 @@ for name, (cols, Z) in MODELS.items():
     rows.append(dict(model=name, term='__var__', tau00=tau00, tau11=tau11, sigma2=s2,
                      icc=tau00 / (tau00 + s2), ll=ll))
     print(f'{name:22s} tau00={tau00:8.1f} tau11={tau11:7.2f} sigma2={s2:8.1f} '
-          f'ICC={tau00/(tau00+s2):.3f}  斜率SD={np.sqrt(max(tau11,0)):5.2f}  ({time.time()-t0:.0f}s)')
+          f'ICC={tau00/(tau00+s2):.3f}  slope SD={np.sqrt(max(tau11,0)):5.2f}  ({time.time()-t0:.0f}s)')
 
 res = pd.DataFrame(rows)
-# 固定效应行补齐方差栏位
+# pad the variance columns for the fixed-effect rows
 for c in ['tau00', 'tau11', 'sigma2', 'icc', 'll']:
     if c not in res.columns:
         res[c] = np.nan
 res.to_csv(os.path.join(OUT, 'mlm_ladder.csv'), index=False, encoding='utf-8-sig')
 
-# ---------- LRT：斜率方差是否显著（M2 vs M3，同固定效应，PV 逐一） ----------
-print('\n=== 斜率方差 LRT（M2 无随机斜率 vs M3 有）===')
+# ---------- LRT: is the slope variance significant (M2 vs M3, same fixed effects, PV by PV) ----------
+print('\n=== Slope-variance LRT (M2 without random slope vs M3 with) ===')
 lr_all, p_all = [], []
 for pv in PV:
     y = s[pv].values
@@ -134,10 +132,10 @@ for pv in PV:
     lr, p = m3.lrt_slope(m2)
     lr_all.append(lr); p_all.append(p)
     print(f'  {pv}: LR={lr:7.2f}  p={p:.4f}  tau11={m3.var["tau11"]:6.2f}')
-print(f'  平均：LR={np.mean(lr_all):.2f}  p(合并近似)={np.mean(p_all):.4f}')
+print(f'  Mean: LR={np.mean(lr_all):.2f}  p (pooled approximation)={np.mean(p_all):.4f}')
 pd.DataFrame({'PV': PV, 'LR': lr_all, 'p': p_all}).to_csv(
     os.path.join(OUT, 'mlm_lrt_slope.csv'), index=False, encoding='utf-8-sig')
 
-# ---------- ICC 的抽样分布（空模型） ----------
-print('\n注：ICC 由 M0 的 tau00/(tau00+sigma2) 得出；设计法 SE 见 15 脚本。')
-print('总耗时 %.0fs' % (time.time() - t0))
+# ---------- Sampling distribution of the ICC (empty model) ----------
+print('\nNote: the ICC comes from tau00/(tau00+sigma2) of M0; see script 15 for design-based SEs.')
+print('Total time %.0fs' % (time.time() - t0))

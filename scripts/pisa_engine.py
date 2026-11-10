@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-pisa_engine —— PISA 设计法推断引擎（PV + BRR-Fay）
+"""pisa_engine -- PISA design-based inference engine (plausible values + BRR-Fay).
 
-规范：
-  · 10 个能力值（PV）逐一估计，Rubin 规则合并
-  · 80 个 BRR-Fay 重复权重（Fay 系数 ρ=0.5）：Var = 1/(R(1-ρ)²) Σ(θ_r − θ)²
-  · 总方差 T = 抽样方差均值 + (1 + 1/M)·PV 间方差
-  · 自由度按 Rubin (1987)
+Conventions:
+  - Each of the 10 plausible values (PVs) is estimated separately and the results
+    are combined with Rubin's rules.
+  - 80 BRR-Fay replicate weights (Fay coefficient rho = 0.5):
+    Var = 1/(R(1-rho)^2) * sum_r (theta_r - theta)^2
+  - Total variance T = mean sampling variance + (1 + 1/M) * between-PV variance
+  - Degrees of freedom follow Rubin (1987)
 """
 import numpy as np
 import pandas as pd
@@ -31,7 +32,7 @@ class PISAEngine:
         self.n = len(df)
 
     def fit(self, cols, name='', cluster=None):
-        """返回 DataFrame: term/b/se/p/df"""
+        """Return a DataFrame with columns term/b/se/p/df."""
         X = np.column_stack([np.ones(self.n)] + [self.df[c].values for c in cols])
         names = ['(截距)'] + list(cols)
         k = X.shape[1]
@@ -59,7 +60,7 @@ class PISAEngine:
         return out
 
     def r2(self, cols_base, cols_full):
-        """增量 R²（加权、PV 平均）"""
+        """Incremental R-squared (weighted, averaged over PVs)."""
         def r2_of(cols):
             X = np.column_stack([np.ones(self.n)] + [self.df[c].values for c in cols])
             vals = []

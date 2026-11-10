@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
-"""12 复现徐瑾劼 & Schleicher (2026, 开放教育研究) 的规范，检验我们的结论是否对设定敏感
+"""Replicate Xu & Schleicher (2026) to test whether our conclusions are specification-sensitive.
 
-背景：该文与本项目使用完全相同的 PISA 2025 B-S-J-Z 数据（374 校、12,385 人），
-同样对四类用途"同时入模"。其结论：帮助学习 +22.06、总结阅读 −19.07、
-初步研究仅阅读显著、起草写作三科均不显著（科学）。
-我们（连续变量、四题同入）得到：帮学习 +9.7、写初稿 +3.4、查资料 −3.5、概括 −12.3（标准化）。
-
-本脚本做三件事：
-1. 严格按其规范复现（"每周及以上"二分 + ESCS/性别/学段 三个控制变量 + PV/BRR）
-2. 同一控制变量下换成连续变量，隔离"操作化"与"控制变量集"两个来源
-3. 复现其四组强度分组（未使用/低频/适度/高频）的调整后均值，对照我们的阈值结论
+That paper uses exactly the same PISA 2025 B-S-J-Z data as this project
+(374 schools, 12,385 students) and also enters the four use purposes
+simultaneously. Its reported science coefficients are +22.06 for help with
+learning, -19.07 for summarising and reading, significance for reading only
+under the initial-research purpose, and no significance for drafting/writing.
 """
 import pandas as pd, numpy as np, os, warnings
 from scipy import stats
@@ -21,22 +17,22 @@ q = pd.read_parquet(os.path.join(BASE, 'data', 'qci_analysis.parquet'))
 REP = [f'W_FSTURWT{i}' for i in range(1, 81)]
 FAY, M_PV, R = 0.5, 10, 80
 IT = ['ST438Q01DA', 'ST438Q02DA', 'ST438Q03DA', 'ST438Q04DA']
-LAB = dict(zip(IT, ['概括阅读材料', '初步研究新主题', '起草写作作业', '帮助学习']))
+LAB = dict(zip(IT, ['Summarising reading material', 'Initial research on a new topic', 'Drafting written assignments', 'Help with learning']))
 
-# ---------- 变量 ----------
+# ---------- Variables ----------
 d = q[IT].where(q[IT] < 95)
 for c in IT:
     q[c] = d[c]
-q['AIUSESCH'] = d.mean(axis=1)                     # 四题均值（总体强度）
+q['AIUSESCH'] = d.mean(axis=1)                     # mean of the four items (overall intensity)
 q['female'] = (q.ST004D01T == 1).astype(float)
-q['senior'] = (q.GRADE >= 10).astype(float)        # 高中=1（PISA 15 岁，初中 7-9 / 高中 10-12）
+q['senior'] = (q.GRADE >= 10).astype(float)        # upper secondary = 1 (PISA age 15: lower secondary grades 7-9, upper 10-12)
 q['escs'] = q.ESCS
 
-# 徐文规范：四类用途的"每周及以上"二分
+# Xu et al. specification: binary "weekly or more" indicator for each of the four purposes
 for c in IT:
     q['W_' + c] = (q[c] >= 4).astype(float).where(q[c].notna())
 
-# 强度四分组（徐文定义）
+# Four intensity groups (Xu et al. definition)
 mx = d.max(axis=1)
 q['AI4'] = pd.Series(np.select(
     [d.isna().any(axis=1), (d == 1).all(axis=1), mx == 2, mx.isin([3, 4]), mx == 5],
@@ -46,11 +42,11 @@ q.loc[q.AI4 == 'NA', 'AI4'] = np.nan
 need = IT + ['W_' + c for c in IT] + ['AIUSESCH', 'female', 'senior', 'escs', 'CNTSCHID', 'W_FSTUWT'] + REP
 s = q.dropna(subset=need + [f'PV{k}SCIE' for k in range(1, 11)]).copy()
 print('=' * 80)
-print(f'分析样本 n={len(s)}, 学校={s.CNTSCHID.nunique()}  （徐文报告 12,241—12,360）')
+print(f'Analysis sample n={len(s)}, schools={s.CNTSCHID.nunique()}  (Xu et al. report 12,241-12,360)')
 print('=' * 80)
 
 
-# ---------- PV + BRR-Fay 引擎 ----------
+# ---------- PV + BRR-Fay engine ----------
 def wls(X, y, w):
     Xt = X.T * w
     return np.linalg.solve(Xt @ X + 1e-10 * np.eye(X.shape[1]), Xt @ y)
@@ -82,8 +78,8 @@ def run(df, yname, cols, label):
 CTRL = ['escs', 'female', 'senior']
 rows = []
 
-# ---------- 1. 严格按徐文规范：二分 + 三控制变量 ----------
-print('\n【1】复现徐文规范（"每周及以上"二分，四类同时入模，控制 ESCS/性别/学段）')
+# ---------- 1. Strict Xu et al. specification: binary + three controls ----------
+print('\n[1] Replicate the Xu et al. specification (binary "weekly or more", all four purposes entered together, controlling ESCS/gender/grade band)')
 for y in ['SCIE', 'MATH', 'READ']:
     r = run(s, y, ['W_' + c for c in IT] + CTRL, f'A 徐文二分/{y}')
     rows.append(r)
@@ -92,10 +88,10 @@ for y in ['SCIE', 'MATH', 'READ']:
     for c in IT:
         line += f' | {LAB[c]} {w.loc["W_"+c,"b"]:+7.2f}{"***" if w.loc["W_"+c,"p"]<.001 else "**" if w.loc["W_"+c,"p"]<.01 else "*" if w.loc["W_"+c,"p"]<.05 else "  "}'
     print(line)
-print('  （徐文报告：科学 帮助学习 +22.06 / 总结 −19.07；数学 +22.47 / −20.30；阅读 +18.85 / −15.92）')
+print('  (Xu et al. report: science help with learning +22.06 / summarising -19.07; maths +22.47 / -20.30; reading +18.85 / -15.92)')
 
-# ---------- 2. 同一控制变量下改连续变量 ----------
-print('\n【2】同一控制变量集，改用四题连续值（我们的操作化，未标准化）')
+# ---------- 2. Continuous variables under the same control set ----------
+print('\n[2] Same control set, four items entered as continuous values (our operationalisation, unstandardised)')
 for y in ['SCIE', 'MATH', 'READ']:
     r = run(s, y, IT + CTRL, f'B 连续/{y}')
     rows.append(r)
@@ -105,7 +101,7 @@ for y in ['SCIE', 'MATH', 'READ']:
         line += f' | {LAB[c]} {w.loc[c,"b"]:+7.2f}{"***" if w.loc[c,"p"]<.001 else "**" if w.loc[c,"p"]<.01 else "*" if w.loc[c,"p"]<.05 else "  "}'
     print(line)
 
-# ---------- 3. 二分 + 我们的完整控制变量（判断是否控制变量集造成差异） ----------
+# ---------- 3. Binary + our full control set (test whether the control set drives the difference) ----------
 FULLCTRL = None
 try:
     import importlib.util
@@ -118,7 +114,7 @@ except Exception:
     pass
 if FULLCTRL:
     s2 = s.dropna(subset=[c for c in FULLCTRL if c not in s.columns or s[c].isna().any()]).copy()
-    print(f'\n【3】二分 + 扩展控制变量集（n={len(s2)}）')
+    print(f'\n[3] Binary + extended control set (n={len(s2)})')
     for y in ['SCIE']:
         r = run(s2, y, ['W_' + c for c in IT] + FULLCTRL, f'C 二分+全控制/{y}')
         rows.append(r)
@@ -126,8 +122,8 @@ if FULLCTRL:
         for c in IT:
             print(f'  {LAB[c]:8s} b={w.loc["W_"+c,"b"]:+7.2f} (se={w.loc["W_"+c,"se"]:5.2f}) p={w.loc["W_"+c,"p"]:.4f}')
 
-# ---------- 4. 强度四分组：调整后均值 ----------
-print('\n【4】复现徐文四组强度分组（未使用/低频/适度/高频）')
+# ---------- 4. Four intensity groups: adjusted means ----------
+print('\n[4] Replicate the Xu et al. four-group intensity classification (non-use / low / moderate / high)')
 sub = s.dropna(subset=['AI4']).copy()
 for g in ['1未使用', '2低频', '3适度', '4高频']:
     sub['g_' + g] = (sub.AI4 == g).astype(float)
@@ -135,28 +131,28 @@ r = run(sub, 'SCIE', ['g_' + g for g in ['2低频', '3适度', '4高频']] + CTR
 rows.append(r)
 w = r.set_index('term')
 descr = sub.groupby('AI4').apply(lambda x: pd.Series({
-    'n': len(x), '占比%': len(x) / len(sub) * 100,
-    '加权均值': np.average(x.PV1SCIE, weights=x.W_FSTUWT)}), include_groups=False)
+    'n': len(x), 'share%': len(x) / len(sub) * 100,
+    'weighted_mean': np.average(x.PV1SCIE, weights=x.W_FSTUWT)}), include_groups=False)
 print(descr.round(1).to_string())
-print('\n  以"未使用"为参照的调整后差异：')
+print('\n  Adjusted differences relative to "non-use":')
 for g in ['2低频', '3适度', '4高频']:
     st = '***' if w.loc['g_' + g, 'p'] < .001 else '**' if w.loc['g_' + g, 'p'] < .01 else '*' if w.loc['g_' + g, 'p'] < .05 else ''
     print(f'    {g}: b={w.loc["g_"+g,"b"]:+7.2f} (se={w.loc["g_"+g,"se"]:5.2f}) p={w.loc["g_"+g,"p"]:.4f} {st}')
-print('  （徐文：高频使用者占 10.8%，未使用与适度使用者成绩无显著差异）')
+print('  (Xu et al.: high-frequency users account for 10.8%; non-users and moderate users do not differ significantly)')
 
 def star(p):
     return '***' if p < .001 else '**' if p < .01 else '*' if p < .05 else ''
 
 pd.concat(rows).to_csv(os.path.join(OUT, 'replicate_xu2026.csv'), index=False, encoding='utf-8-sig')
-print('\n结果已保存 outputs/replicate_xu2026.csv')
+print('\nResults saved to outputs/replicate_xu2026.csv')
 
-# ---------- 5. 我们原规范的对照（连续+标准化+完整控制，用于三方比较） ----------
-print('\n【5】三种设定下"起草写作"与"初步研究"的系数对照')
+# ---------- 5. Comparison with our original specification (continuous + standardised + full controls, three-way) ----------
+print('\n[5] Coefficients for "drafting/writing" and "initial research" under three specifications')
 cur = pd.read_csv(os.path.join(OUT, 'regression_main.csv'))
 b1 = cur[(cur.model.str.contains('双维度', na=False)) & (cur.outcome == 'SCIE')]
 if len(b1):
-    for t, nm in [('AI_sub_z', '写初稿(构成)'), ('AI_deep_z', '查资料(构成)')]:
+    for t, nm in [('AI_sub_z', 'drafting (component)'), ('AI_deep_z', 'researching sources (component)')]:
         row = b1[b1.term == t]
         if len(row):
-            print(f'    我们原设定 {nm}: b={row.b.iloc[0]:+.2f} p={row.p.iloc[0]:.4f}')
-print('    徐文设定见上表【1】【2】【3】')
+            print(f'    Our original specification {nm}: b={row.b.iloc[0]:+.2f} p={row.p.iloc[0]:.4f}')
+print('    Xu et al. specification: see panels [1] [2] [3] above')

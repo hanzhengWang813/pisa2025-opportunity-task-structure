@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-20. 校间 vs 校内：Mundlak 分解 + 校内四用途检验
+"""Between- versus within-school: Mundlak decomposition plus the within-school four-purpose test.
 
-  Mundlak：y ~ AI_within（组均值中心化）+ AI_between（校均值）+ 协变量
-    → 两个系数可在同一模型内比较（Hausman 型检验：二者是否相等）
-  FE：y ~ AI + 校固定效应（只保留校内成分）
-  四用途：把 ST438 四题同时放入 FE 模型，检验"用途差异"是否在校内成立
-
-输出 outputs/mundlak.csv、outputs/within_uses.csv
+  Mundlak: y ~ AI_within (group-mean centred) + AI_between (school mean) + covariates
+  Both coefficients sit in one model, so they can be compared directly
+  (Hausman-type test of equality).
 """
 import os
 import sys
@@ -32,17 +28,17 @@ for c in ['ESCS', 'GRADE', 'JOYSCIE', 'EFFSCIE', 'SELFREG', 'COGACSC', 'TEACHSUP
 q['grade_z'] = q['GRADE_z']
 
 IT = ['ST438Q01DA', 'ST438Q02DA', 'ST438Q03DA', 'ST438Q04DA']
-LAB = dict(zip(IT, ['总结阅读材料', '初步研究新主题', '起草写作', '帮助学习']))
+LAB = dict(zip(IT, ['summarise source text', 'initial research on a new topic', 'draft writing', 'help learning']))
 for c in IT:
     q[c] = q[c].where(q[c] < 95)
 
 q['AIz'] = (q['AI_total'] - q['AI_total'].mean()) / q['AI_total'].std()
 q['AI_daily'] = (q['AI_total'].round() >= 5).astype(float).where(q['AI_total'].notna())
-# Mundlak 分解
+# Mundlak decomposition
 q['AI_between'] = q['CNTSCHID'].map(q.groupby('CNTSCHID')['AIz'].mean())
 q['AI_within'] = q['AIz'] - q['AI_between']
 q['AI_between_z'] = (q['AI_between'] - q['AI_between'].mean()) / q['AI_between'].std()
-# 四用途的中心化（校内/校间）
+# centring of the four purposes (within-school / between-school)
 for c in IT:
     q['bw_' + c] = q['CNTSCHID'].map(q.groupby('CNTSCHID')[c].mean())
     q['wi_' + c] = q[c] - q['bw_' + c]
@@ -55,7 +51,7 @@ STU = ['female', 'escs', 'repeat', 'grade_z', 'JOYSCIE_z', 'EFFSCIE_z', 'SELFREG
 # ---------- Mundlak ----------
 need = STU + ['AI_within', 'AI_between_z', 'W_FSTUWT', 'CNTSCHID', 'AI_daily']
 s = q.dropna(subset=need).copy()
-print('Mundlak 样本 n=%d 学校=%d' % (len(s), s.CNTSCHID.nunique()))
+print('Mundlak sample n=%d schools=%d' % (len(s), s.CNTSCHID.nunique()))
 rows = []
 for outcome in ['SCIE', 'CMPS']:
     eng = PISAEngine(s, 'PV', outcome)
@@ -71,18 +67,18 @@ for outcome in ['SCIE', 'CMPS']:
 mun = pd.concat(rows, ignore_index=True)
 mun.to_csv(os.path.join(OUT, 'mundlak.csv'), index=False, encoding='utf-8-sig')
 
-# ---------- 校内四用途（FE） ----------
+# ---------- Within-school four purposes (FE) ----------
 need2 = STU + ['ci_' + c for c in IT] + ['bz_' + c for c in IT] + ['W_FSTUWT', 'CNTSCHID']
 s2 = q.dropna(subset=need2).copy()
-print('\n校内四用途样本 n=%d 学校=%d' % (len(s2), s2.CNTSCHID.nunique()))
+print('\nWithin-school four-purpose sample n=%d schools=%d' % (len(s2), s2.CNTSCHID.nunique()))
 
 rows = []
 for outcome in ['SCIE', 'CMPS']:
     eng = PISAEngine(s2, 'PV', outcome)
     base = STU
-    # 单层（参照：既有做法）
+    # single level (benchmark: the existing approach)
     d1 = eng.fit(base + ['ci_' + c for c in IT], f'{outcome}|四用途 单层')
-    # 加校间成分
+    # add the between-school component
     d2 = eng.fit(base + ['ci_' + c for c in IT] + ['bz_' + c for c in IT], f'{outcome}|四用途 单层+校间')
     rows += [d1.assign(outcome=outcome), d2.assign(outcome=outcome)]
     # FE
@@ -106,12 +102,12 @@ for outcome in ['SCIE', 'CMPS']:
     dfe = pd.DataFrame(dict(model=f'{outcome}|四用途 校内FE', term=names,
                             b=qb, se=se, p=pv_, df=dfree)).iloc[1:]
     rows.append(dfe.assign(outcome=outcome))
-    print(f'\n-- {outcome} 四用途（标准化，校内/单层对比）')
+    print(f'\n-- {outcome} four purposes (standardised, within-school vs single level)')
     for i, c in enumerate(IT):
         a = d1[d1.term == 'ci_' + c].iloc[0]
         f = dfe[dfe.term == 'ci_' + c].iloc[0]
-        print(f'   {LAB[c]:8s} 单层 {a.b:7.2f} ({a.se:5.2f}) | 校内FE {f.b:7.2f} ({f.se:5.2f}) p={f.p:.4f}')
+        print(f'   {LAB[c]:8s} single level {a.b:7.2f} ({a.se:5.2f}) | within-school FE {f.b:7.2f} ({f.se:5.2f}) p={f.p:.4f}')
 
 w = pd.concat(rows, ignore_index=True)
 w.to_csv(os.path.join(OUT, 'within_uses.csv'), index=False, encoding='utf-8-sig')
-print('\n完成')
+print('\nDone')

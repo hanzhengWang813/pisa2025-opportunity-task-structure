@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-22. 论文主图（学校为主线）
+"""Main paper figures with the school as the organising thread.
 
-图1 方差分解与斜率异质性
-图2 学校层调节变量扫描（森林图，全部不显著）
-图3 单层 vs 校内：AI 强度、每天使用、四用途
-图4 学校层主效应（PV+BRR）
-
-同时输出 outputs/key_numbers.csv（图表所依据的关键数值）
+Figure 1 Variance decomposition and slope heterogeneity
+Figure 2 School-level moderator scan (forest plot; none significant)
+and the remaining school-side exhibits.
 """
 import os
 import sys
@@ -75,7 +71,7 @@ for nm, cols, Z in specs:
 ml = pd.DataFrame(rows)
 ml.to_csv(os.path.join(OUT, 'mlm_variance.csv'), index=False, encoding='utf-8-sig')
 
-# ---------- 图1 ----------
+# ---------- Figure 1 ----------
 fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.5), gridspec_kw=dict(width_ratios=[1.15, 1]))
 ax = axes[0]
 labels = ml.model.tolist()
@@ -93,7 +89,7 @@ for sp in ['top', 'right']:
     ax.spines[sp].set_visible(False)
 
 ax = axes[1]
-# 斜率异质性：用 M4 的 tau11 生成说明性分布
+# Slope heterogeneity: illustrative distribution generated from the M4 random-slope variance tau11
 tau11 = ml.loc[ml.model == '+AI 随机斜率', 'tau11'].iloc[0]
 tau00 = ml.loc[ml.model == '+AI 随机斜率', 'tau00'].iloc[0]
 rng = np.random.default_rng(7)
@@ -114,9 +110,9 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig6_variance.png'), dpi=210, bbox_inches='tight')
 plt.close()
-print('图1 完成')
+print('Figure 1 done')
 
-# ---------- 图2 调节扫描森林图 ----------
+# ---------- Figure 2 Moderator-scan forest plot ----------
 scan = pd.read_csv(os.path.join(OUT, 'moderator_scan.csv'))
 scan = scan[scan.outcome == 'SCIE'].copy()
 agg = pd.read_csv(os.path.join(OUT, 'school_aggregate_scan.csv'))
@@ -152,9 +148,9 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig7_moderator_forest.png'), dpi=210, bbox_inches='tight')
 plt.close()
-print('图2 完成')
+print('Figure 2 done')
 
-# ---------- 图3 单层 vs 校内 ----------
+# ---------- Figure 3 Single-level vs within-school ----------
 lvl = pd.read_csv(os.path.join(OUT, 'level_id.csv'))
 use = pd.read_csv(os.path.join(OUT, 'uses_within.csv'))
 IT = ['ST438Q01DA', 'ST438Q02DA', 'ST438Q03DA', 'ST438Q04DA']
@@ -205,9 +201,9 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig8_within_between.png'), dpi=210, bbox_inches='tight')
 plt.close()
-print('图3 完成')
+print('Figure 3 done')
 
-# ---------- 图4 学校主效应（重估：含校均ESCS与学术氛围）----------
+# ---------- Figure 4 School main effects (re-estimated: school-mean ESCS and academic climate included) ----------
 from pisa_engine import PISAEngine
 SCHZ = ['A_DIGCOND_z', 'B_TCHCAP_z', 'C_DIGPURP_z', 'D_RULES_z', 'F_SRL_z',
         'G_DIGORG_z', 'H_MONITOR_z', 'I_ENABLE_z']
@@ -251,4 +247,4 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig9_school_effects.png'), dpi=210, bbox_inches='tight')
 plt.close()
-print('图4 完成')
+print('Figure 4 done')

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""07b 图表重制（修正标签重叠与配色）"""
+"""Re-draw the figures with corrected label placement and colour scheme.
+"""
 import pandas as pd, numpy as np, os, warnings
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ from paths import BASE  # repo root (override with PISA_BASE)
 OUT=os.path.join(BASE,'outputs')
 r=pd.read_csv(os.path.join(OUT,'regression_main.csv'))
 
-# ---------- 图1 阈值效应 ----------
+# ---------- Figure 1: threshold effect ----------
 a2=r[(r.model=='A2 AI分组(全模型)')&(r.outcome=='SCIE')].set_index('term')
 order=['AI_g2','AI_g3','AI_g4','AI_g5']
 labs=['每年\n1-2次','每月\n1-2次','每周\n1-2次','每天或\n几乎每天']
@@ -40,7 +41,7 @@ ax.text(-.55,-49,'参照组：从不或几乎从不使用  ·  误差线为 95% 
         fontsize=7.4,color='#5F5E5A',va='bottom')
 plt.tight_layout(); plt.savefig(os.path.join(OUT,'fig1_threshold.png'),bbox_inches='tight'); plt.close()
 
-# ---------- 图2 用途构成 ----------
+# ---------- Figure 2: use composition ----------
 names=['概括既定文本','查资料','写初稿','帮学习']
 vals=[-18.23,-9.48,6.04,14.95]; ses_=[2.11,1.68,1.53,1.87]
 fig,ax=plt.subplots(figsize=(6.6,3.4))
@@ -64,7 +65,7 @@ for s in ['top','right']: ax.spines[s].set_visible(False)
 ax.text(-25,3.45,'绿色＝负向关联   红色＝正向关联',fontsize=8,color='#5F5E5A',va='bottom')
 plt.tight_layout(); plt.savefig(os.path.join(OUT,'fig2_composition.png'),bbox_inches='tight'); plt.close()
 
-# ---------- 图3 调节效应 ----------
+# ---------- Figure 3: moderation ----------
 fig,axes=plt.subplots(1,2,figsize=(8.0,3.5))
 def panel(ax,model,inter,t1):
     row=r[r.model==model]
@@ -88,4 +89,4 @@ fig.legend(h1,['调节变量低（−1SD）','处于均值','调节变量高（+
            ncol=3,frameon=False,fontsize=8.6,bbox_to_anchor=(0.5,-0.04),handlelength=1.8)
 plt.tight_layout(rect=[0,0.06,1,1])
 plt.savefig(os.path.join(OUT,'fig3_moderation.png'),bbox_inches='tight'); plt.close()
-print('三张图已重制')
+print('All three figures redrawn')

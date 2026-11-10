@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-17. 学校层调节的第二类候选：校内教学实践的校均值（学生报告聚合）
-  理由：校长报告的数字化条件在学校间趋同（天花板），缺乏区分度；
-        校内教学实践（认知激活、教师支持、纪律氛围、协作推理、自我调节）有真实校间变异。
-另：诊断 A_DIGCOND 与 B_TCHCAP 的符号相反是否为抑制效应。
-输出 outputs/school_aggregate_scan.csv、outputs/suppression_check.csv
+"""Second family of school-level moderators: school means of in-school teaching practice.
+
+Rationale: principal-reported digital conditions converge across schools
+(ceiling effect) and carry little discriminating power, whereas in-school
+teaching practice (cognitive activation, teacher support, disciplinary climate,
+collaborative reasoning, self-regulation) shows genuine between-school variance.
+Also diagnoses whether the opposite signs of A_DIGCOND and B_TCHCAP reflect
+suppression.
 """
 import os
 import sys
@@ -28,7 +30,7 @@ for c in ['ESCS', 'GRADE', 'JOYSCIE', 'EFFSCIE', 'SELFREG', 'COGACSC', 'TEACHSUP
 q['grade_z'] = q['GRADE_z']
 q['AIz'] = (q['AI_total'] - q['AI_total'].mean()) / q['AI_total'].std()
 
-# ---------- 校均值聚合（校内教学实践） ----------
+# ---------- School-mean aggregation (in-school teaching practice) ----------
 AGG = {'SCH_COG': 'COGACSC', 'SCH_TS': 'TEACHSUP', 'SCH_DC': 'DISCLISCI',
        'SCH_SCOLL': 'SCIECOLLR', 'SCH_SREG': 'SELFREG', 'SCH_JOY': 'JOYSCIE'}
 g = q.groupby('CNTSCHID')
@@ -45,7 +47,7 @@ MODS = list(AGG.keys()) + ['SCH_MEAN_ESCS']
 
 need = STU + ['AIz', 'W_FSTUWT', 'CNTSCHID'] + MODS + [k + '_z' for k in MODS] + ['AIx' + k for k in MODS]
 s = q.dropna(subset=[c for c in need if c in q.columns]).copy()
-print('样本 n=%d 学校=%d' % (len(s), s.CNTSCHID.nunique()))
+print('Sample n=%d schools=%d' % (len(s), s.CNTSCHID.nunique()))
 
 rows = []
 for outcome in ['SCIE', 'CMPS']:
@@ -58,7 +60,7 @@ for outcome in ['SCIE', 'CMPS']:
         rows.append(dict(outcome=outcome, moderator=k, b_AI=ga.b,
                          b_int=gi.b, se_int=gi.se, p_int=gi.p,
                          b_main=gm.b, se_main=gm.se, p_main=gm.p))
-        print(f'{outcome} {k:16s} 交互 {gi.b:7.2f} ({gi.se:5.2f}) p={gi.p:.4f} | 主效应 {gm.b:7.2f} p={gm.p:.4f}')
+        print(f'{outcome} {k:16s} interaction {gi.b:7.2f} ({gi.se:5.2f}) p={gi.p:.4f} | main effect {gm.b:7.2f} p={gm.p:.4f}')
 
 res = pd.DataFrame(rows)
 res.to_csv(os.path.join(OUT, 'school_aggregate_scan.csv'), index=False, encoding='utf-8-sig')

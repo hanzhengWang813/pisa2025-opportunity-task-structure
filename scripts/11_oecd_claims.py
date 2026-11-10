@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-"""11 直接检验 OECD 报告的核心主张（中国 B-S-J-Z 子样本）
+"""Direct tests of the core OECD claims on the B-S-J-Z subsample.
 
-OECD PISA 2025 Vol.I Box I.4.2 主张：
-  ① 约六成学生被要求评估 AI 生成信息（OECD 平均 62.6%，中国四省市 44.6%）
-  ② 频繁用 AI 学习「且」在校学过评估 AI 信息的学生，科学成绩略高于非使用者或低频使用者
-  ③ 这类机会在优势家庭学生中更普遍 → 新的 AI 素养鸿沟
-
-本脚本用 PV+BRR 在中国子样本上分别检验这三条。
+OECD PISA 2025 Vol. I, Box I.4.2 states that
+  (i) about six in ten students are asked to evaluate AI-generated information
+      (OECD average 62.6%, B-S-J-Z 44.6%), and
+  (ii) students who use AI frequently for learning AND were taught at school to
+      evaluate AI information score slightly higher in science than non-users
+      or low-frequency users.
+Both claims are re-estimated here on the same subsample used in the paper.
 """
 import pandas as pd, numpy as np, os, warnings
 from scipy import stats
@@ -44,15 +45,15 @@ q['AI_grp'] = q.AI_total.round()
 for k in [2, 3, 4, 5]:
     q[f'AI_g{k}'] = (q.AI_grp == k).astype(float)
 
-# ---- OECD 关键构念 ----
-# ST436Q16: 在校被要求评估「AI 生成信息」的质量
+# ---- Key OECD constructs ----
+# ST436Q16: at school, asked to evaluate the quality of AI-generated information
 q['LO_AI'] = q['ST436Q16DA'].where(q['ST436Q16DA'] < 5)
-q['LO_AI_any']   = (q.LO_AI >= 2).astype(float).where(q.LO_AI.notna())   # 至少有时
-q['LO_AI_freq']  = (q.LO_AI >= 3).astype(float).where(q.LO_AI.notna())   # 经常/非常频繁
-# ST436Q02: 评估「线上信息」的质量（一般数字信息素养教学）
+q['LO_AI_any']   = (q.LO_AI >= 2).astype(float).where(q.LO_AI.notna())   # at least sometimes
+q['LO_AI_freq']  = (q.LO_AI >= 3).astype(float).where(q.LO_AI.notna())   # often / very often
+# ST436Q02: evaluate the quality of online information (general digital literacy teaching)
 q['LO_NET'] = q['ST436Q02DA'].where(q['ST436Q02DA'] < 5)
 q['LO_NET_any'] = (q.LO_NET >= 2).astype(float).where(q.LO_NET.notna())
-q['AI_weekly'] = (q.AI_total >= 3.5).astype(float)   # 每周一次及以上
+q['AI_weekly'] = (q.AI_total >= 3.5).astype(float)   # once a week or more
 q['AIxLOAI'] = q.AI_total_z * q.LO_AI_freq
 q['AIxLONET'] = q.AI_total_z * q.LO_NET_any
 
@@ -107,30 +108,30 @@ need = list(dict.fromkeys(FULL + ['AI_total', 'AI_grp', 'LO_AI', 'LO_AI_freq',
 need = [c for c in need if c in q.columns]
 s = q.dropna(subset=need + ['PV1SCIE']).copy()
 print('=' * 76)
-print(f'样本 n={len(s)}，学校 {s.CNTSCHID.nunique()}')
+print(f'Sample n={len(s)}, schools {s.CNTSCHID.nunique()}')
 print('=' * 76)
 
-# ---------- 主张 ①：机会覆盖率 ----------
-print('\n【OECD 主张①】在校被要求评估 AI 生成信息的比例')
+# ---------- Claim 1: opportunity coverage ----------
+print('\n[OECD claim 1] Share asked at school to evaluate AI-generated information')
 def wshare(mask, w):
     m = ~np.isnan(mask.astype(float)); return np.average(mask.astype(float)[m], weights=w[m]) * 100
-for nm, v in [('至少有时', 'LO_AI_any'), ('经常/非常频繁', 'LO_AI_freq')]:
-    print(f'  AI 生成信息评估 · {nm}: {wshare(s[v].values, s.W_FSTUWT.values):.1f}%')
-print(f'  线上信息评估 · 至少有时: {wshare(s.LO_NET_any.values, s.W_FSTUWT.values):.1f}%')
-print('  （OECD 报告：中国四省市 44.6%，OECD 平均 62.6%）')
+for nm, v in [('at least sometimes', 'LO_AI_any'), ('often / very often', 'LO_AI_freq')]:
+    print(f'  AI-generated information evaluation · {nm}: {wshare(s[v].values, s.W_FSTUWT.values):.1f}%')
+print(f'  Online information evaluation · at least sometimes: {wshare(s.LO_NET_any.values, s.W_FSTUWT.values):.1f}%')
+print('  (OECD report: B-S-J-Z 44.6%, OECD average 62.6%)')
 
-# 机会是否偏向优势家庭（主张③）
-print('\n【OECD 主张③】机会的阶层分布')
+# Do opportunities skew towards advantaged families (claim 3)?
+print('\n[OECD claim 3] Social distribution of the opportunity')
 for v in ['LO_AI_freq', 'LO_NET_any']:
     sub = s.dropna(subset=[v])
     lo = sub[sub.escs <= sub.escs.quantile(.25)]; hi = sub[sub.escs >= sub.escs.quantile(.75)]
-    print(f'  {v}: 最低 SES 四分位 {wshare(lo[v].values, lo.W_FSTUWT.values):.1f}%  '
-          f'| 最高 SES 四分位 {wshare(hi[v].values, hi.W_FSTUWT.values):.1f}%  '
-          f'| 差 {wshare(hi[v].values, hi.W_FSTUWT.values) - wshare(lo[v].values, lo.W_FSTUWT.values):+.1f} pp')
+    print(f'  {v}: lowest SES quartile {wshare(lo[v].values, lo.W_FSTUWT.values):.1f}%  '
+          f'| highest SES quartile {wshare(hi[v].values, hi.W_FSTUWT.values):.1f}%  '
+          f'| diff {wshare(hi[v].values, hi.W_FSTUWT.values) - wshare(lo[v].values, lo.W_FSTUWT.values):+.1f} pp')
 print(f'  corr(LO_AI_freq, ESCS) = {s[["LO_AI_freq", "escs"]].corr().iloc[0,1]:.3f}')
 
-# ---------- 主张 ②：保护作用 ----------
-print('\n【OECD 主张②】有/无 AI 评估机会 下的 AI 使用效应（PV+BRR，全协变量）')
+# ---------- Claim 2: protective effect ----------
+print('\n[OECD claim 2] AI-use effect with vs without access to AI evaluation (PV+BRR, full covariate set)')
 rows = []
 for cols, lab in [
     (FULL + ['AI_total_z'], 'P0 基准'),
@@ -143,20 +144,20 @@ for cols, lab in [
         st = '***' if w.p < .001 else '**' if w.p < .01 else '*' if w.p < .05 else ''
         print(f'  {lab:16s} {w.term:12s} b={w.b:7.2f} se={w.se:5.2f} p={w.p:.4f}{st}')
 
-# ---------- OECD 风格分层描述 ----------
-print('\n【OECD 风格分层】分「是否经常被要求评估 AI 信息」看各 AI 强度组的加权成绩')
+# ---------- OECD-style stratified description ----------
+print('\n[OECD-style stratification] Weighted scores by AI intensity group, split by whether students are often asked to evaluate AI information')
 d = s.dropna(subset=['LO_AI_freq'])
 def wm(sub):
     x = sub.PV1SCIE.values; w = sub.W_FSTUWT.values; m = ~np.isnan(x)
     return np.average(x[m], weights=w[m]) if m.sum() else np.nan
-for lv, lb in [(0, '未经受 AI 评估教学'), (1, '经常经受 AI 评估教学')]:
+for lv, lb in [(0, 'no AI-evaluation teaching'), (1, 'frequent AI-evaluation teaching')]:
     sub = d[d.LO_AI_freq == lv]
     line = f'  {lb:16s} n={len(sub):5d} |'
     for k in [1, 2, 3, 4, 5]:
         gk = sub[sub.AI_grp == k]
-        line += f' {["","从不","每年","每月","每周","每天"][k]}:{wm(gk):6.1f}'
+        line += f' {["","never","yearly","monthly","weekly","daily"][k]}:{wm(gk):6.1f}'
     print(line)
-print('  （OECD 认为：经常用 AI 学习 + 有评估机会者，成绩略高于非/低频使用者）')
+print('  (OECD argues: frequent AI use for learning plus access to evaluation teaching scores slightly higher than non-/low-frequency use)')
 
 pd.concat(rows).to_csv(os.path.join(OUT, 'oecd_claim_tests.csv'), index=False, encoding='utf-8-sig')
-print('\n已保存 outputs/oecd_claim_tests.csv')
+print('\nSaved to outputs/oecd_claim_tests.csv')

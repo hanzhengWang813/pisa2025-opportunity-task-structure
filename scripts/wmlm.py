@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
-"""
-wmlm —— 两层随机截距（+随机斜率）模型的加权极大似然估计
+"""wmlm -- weighted maximum-likelihood estimation of a two-level random-intercept
+(and random-slope) model.
 
-模型： y_j = X_j β + Z_j u_j + e_j
-       u_j ~ N(0, Ψ)                 Ψ = L L'（L 下三角）
-       e_j ~ N(0, σ² diag(1/w_j))     w 为水平1 精度权重
+Model:  y_j = X_j b + Z_j u_j + e_j
+        u_j ~ N(0, Psi)                  Psi = L L'  (L lower triangular)
+        e_j ~ N(0, sigma^2 diag(1/w_j))  w = level-1 precision weights
 
-为什么要自建：PISA 分析必须加权，而 statsmodels.MixedLM 不支持权重。
-验证：w 全为 1 时应与 statsmodels.MixedLM(reml=False) 结果一致（见 14 脚本）。
+Why we implemented it ourselves: PISA analysis must be weighted, and
+statsmodels.MixedLM does not accept weights.
+Validation: with all w = 1 the estimates must match
+statsmodels.MixedLM(reml=False); see script 14.
 
-参数化：k=1 → θ=[log σ², log ψ]；k=2 → θ=[log σ², log L11, L21, log L22]
+Parameterisation: k=1 -> theta = [log sigma^2, log psi]
+                  k=2 -> theta = [log sigma^2, log L11, L21, log L22]
 """
 import numpy as np
 from scipy.optimize import minimize
@@ -34,7 +37,7 @@ class TwoLevelML:
         self.maxiter = maxiter
         self.theta0 = None
 
-    # ---------- 参数 → L ----------
+    # ---------- parameters -> L ----------
     def _L(self, theta):
         if self.k == 1:
             return np.array([[np.exp(theta[1])]])
@@ -48,7 +51,7 @@ class TwoLevelML:
         return np.array([np.log(max(vy * .7, 1e-6)), np.log(max(vy * .25, 1e-6)),
                          0.0, np.log(max(vy * .01, 1e-6))])
 
-    # ---------- 给定方差参数，GLS 解 β 与对数似然 ----------
+    # ---------- given the variance parameters, GLS solution for beta and log-likelihood ----------
     def _gls(self, theta, want_xtvx=False):
         s2 = np.exp(theta[0])
         L = self._L(theta)
@@ -71,7 +74,7 @@ class TwoLevelML:
             yVy += y @ Vi_y
             logdet_all += np.log(s2 / w).sum() + logdet_Psi + np.linalg.slogdet(A)[1]
         beta = np.linalg.solve(XtVX, XtVy)
-        # 剖面前似然：r'V^{-1}r = y'V'y - 2β'X'V'y + β'(X'V'X)β
+        # profile likelihood: r'V^{-1}r = y'V'y - 2b'X'V'y + b'(X'V'X)b
         rVr = yVy - 2 * beta @ XtVy + beta @ (XtVX @ beta)
         ll = -0.5 * (logdet_all + rVr) - 0.5 * self.n * np.log(2 * np.pi)
         if want_xtvx:
@@ -110,7 +113,7 @@ class TwoLevelML:
         return np.sqrt(np.diag(self.vcov_beta))
 
     def lrt_slope(self, other):
-        """与只有随机截距的模型比较，检验斜率方差（50:50 混合卡方）"""
+        """Test the slope variance against a random-intercept-only model (50:50 mixture chi-square)."""
         from scipy import stats
         lr = 2 * (self.ll - other.ll)
         p = 0.5 * stats.chi2.sf(max(lr, 0), 1) + 0.5 * (1.0 if lr <= 0 else 0.0)
@@ -118,8 +121,8 @@ class TwoLevelML:
 
 
 class TwoLevelMLFast(TwoLevelML):
-    """向量化版本：把所有学校补齐成 (J, nmax, ·) 张量，单次 numpy 调用完成。
-       与 TwoLevelML 数值等价（同一 θ 下对数似然相同）。"""
+    """Vectorised version: pad all schools into a (J, nmax, .) tensor and evaluate in one
+       numpy call. Numerically equivalent to TwoLevelML (same log-likelihood at the same theta)."""
 
     def __init__(self, y, X, Z, gid, w=None, maxiter=500):
         super().__init__(y, X, Z, gid, w, maxiter)

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""PISA 2025 中国 B-S-J-Z (QCI) 学生库 + 学校库 抽取与合并"""
+"""Extract and merge the PISA 2025 B-S-J-Z (QCI) student and school files.
+
+Reads data/CY09_MS_STU_PUF.sav, merges the principal questionnaire, and writes
+data/qci_student.parquet (raw student frame) plus meta.pkl / meta_sch.pkl
+(value-label dictionaries used downstream).
+"""
 import pyreadstat, pandas as pd, numpy as np, os, json, pickle
 
 from paths import BASE  # repo root (override with PISA_BASE)
@@ -44,7 +49,7 @@ TIME = ['ST071Q01NA','ST071Q02NA','ST296Q03JA','ST296Q04JA','IC173Q03JA','IC173Q
         'ST294Q04JA','ST294Q05JA','ST295Q04JA','ST295Q05JA']
 
 STU_VARS = [v for v in (DESIGN+WEIGHTS+PVS+AI+DIGLIT+ICT+SES+DEMO+SCI_DISP+CLASSRM+WELLBEING+PEER+EFFORT+TIME) if v in AV_STU]
-print('学生变量请求/可用:', len(STU_VARS))
+print('Student variables requested/available:', len(STU_VARS))
 
 SCH_WLE = ['DIGPREP','AVLRSOFT','SCTRAIN','EDUSHORT','STAFFSHORT','FREESCIE','EDULEAD',
            'NEGSCLIM','ALLACTIV','ENCOURPG','SESASSESS','STDTEST','TDTEST','PRIORLRN','DELGLOB','OPPACTENV']
@@ -55,25 +60,25 @@ for pref in ['SC004Q','SC016Q','SC017Q','SC018Q','SC019Q','SC042Q','SC155Q','SC1
              'SC053Q','SC421Q','SC400Q','SC482']:
     SCH_Q += [n for n in META_SCH['names'] if n.startswith(pref)]
 SCH_VARS = [v for v in (SCH_CORE + SCH_WLE + SCH_Q) if v in AV_SCH]
-print('学校变量请求/可用:', len(SCH_VARS))
+print('School variables requested/available:', len(SCH_VARS))
 
-print('读取学生库 ...')
+print('Reading the student file ...')
 stu, _ = pyreadstat.read_sav(STU, usecols=STU_VARS)
-print('全库:', stu.shape)
+print('Full file:', stu.shape)
 q = stu[stu.CNT == 'QCI'].copy().reset_index(drop=True)
 del stu
-print('QCI 学生:', len(q), '| 学校:', q.CNTSCHID.nunique())
+print('QCI students:', len(q), '| schools:', q.CNTSCHID.nunique())
 
-print('读取学校库 ...')
+print('Reading the school file ...')
 sch, _ = pyreadstat.read_sav(SCH, usecols=SCH_VARS)
 qs = sch[sch.CNT == 'QCI'].copy().reset_index(drop=True)
-print('QCI 学校记录:', len(qs))
-print('学校层 WLE 有效比例(%):')
+print('QCI school records:', len(qs))
+print('Valid share of school-level WLE indices (percent):')
 print((qs[[c for c in SCH_WLE if c in qs.columns]].notna().mean()*100).round(1).to_string())
 
 sch_use = qs.drop(columns=[c for c in ['CNT'] if c in qs.columns])
 m = q.merge(sch_use, on='CNTSCHID', how='left', suffixes=('', '_sch'))
-print('\n合并后:', m.shape, '| 匹配到学校层的学生数:', m['DIGPREP'].notna().sum())
+print('\nAfter merging:', m.shape, '| students matched to a school record:', m['DIGPREP'].notna().sum())
 
 q.to_parquet(os.path.join(OUT, 'qci_student.parquet'), index=False)
 qs.to_parquet(os.path.join(OUT, 'qci_school.parquet'), index=False)

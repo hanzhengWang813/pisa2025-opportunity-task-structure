@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-"""04 主分析（修订）：非线性 + 调节效应 + 双层分解
-修正：去重防共线；数字素养改用 ICTINFO；加入学校 AI 治理
+"""Revised main analysis: non-linearity, moderation, and two-level decomposition.
+
+Fixes collinearity by de-duplicating predictors, switches digital literacy to
+ICTINFO, and adds school-level AI governance.
 """
 import pandas as pd, numpy as np, os, warnings
 from scipy import stats
@@ -12,13 +14,13 @@ q = pd.read_parquet(os.path.join(BASE,'data','qci_analysis.parquet'))
 REP = [f'W_FSTURWT{i}' for i in range(1,81)]
 FAY, M_PV, R = 0.5, 10, 80
 
-# ---------- 变量 ----------
+# ---------- Variables ----------
 q['female']=(q.ST004D01T==1).astype(float); q['age']=q.AGE; q['grade']=q.GRADE
 q['repeat']=(q.REPEAT>0).astype(float)
 q['immig1']=(q.IMMIG==1).astype(float); q['immig2']=(q.IMMIG==2).astype(float)
 q['escs']=q.ESCS
 
-# 学校 AI 治理与培训
+# School AI governance and training
 for c in ['SC190Q01JA','SC190Q05JA','SC190Q06JA','SC190Q09JA']:
     q[c+'_b'] = (q[c]==1).astype(float).where(q[c].notna())
 q['SCH_AIPOL']  = q[[c+'_b' for c in ['SC190Q01JA','SC190Q05JA','SC190Q06JA','SC190Q09JA']]].mean(axis=1)
@@ -39,12 +41,12 @@ q['SCH_ESCS_z'] = (q.SCH_ESCS-q.SCH_ESCS.mean())/q.SCH_ESCS.std()
 q['SCH_AI_z']   = (q.SCH_AI-q.SCH_AI.mean())/q.SCH_AI.std()
 q['AI_within']  = q.AI_total_z - q.SCH_AI_z
 
-# AI 非线性：分组 + 平方项
+# AI non-linearity: groupings + squared term
 q['AI_grp'] = q.AI_total.round()
 for k in [2,3,4,5]: q[f'AI_g{k}'] = (q.AI_grp==k).astype(float)
 q['AI_sq'] = q.AI_total_z**2
 
-# 交互项
+# Interaction terms
 for a,b,nm in [('AI_total_z','ICTINFO_z','AIxDL'),('AI_total_z','escs_z','AIxSES'),
                ('AI_total_z','DIGPREP_z','AIxPREP'),('AI_total_z','SCTRAIN_z','AIxTRN'),
                ('AI_total_z','SCH_AIPOL_z','AIxPOL'),('AI_total_z','SCH_AITRAIN_z','AIxATRN'),
@@ -59,7 +61,7 @@ SCH  = ['DIGPREP_z','SCTRAIN_z','EDUSHORT_z','STAFFSHORT_z','NEGSCLIM_z','SCH_ES
 FULL = BASE_COV + DISP + CLAS + ICT + SCH
 
 def build(df, cols):
-    cols = list(dict.fromkeys(cols))          # 关键：去重防共线
+    cols = list(dict.fromkeys(cols))          # key step: de-duplicate to avoid collinearity
     X = np.column_stack([np.ones(len(df))]+[df[c].values.astype(float) for c in cols])
     return X, ['Intercept']+cols
 
@@ -89,14 +91,14 @@ def run(df, yname, cols, label):
     return pd.DataFrame({'model':label,'outcome':yname,'term':names,'b':Qb,'se':se,
                          't':t,'p':p,'n':len(df),'M_PV':m})
 
-print('='*72); print('分析样本'); print('='*72)
+print('='*72); print('Analysis sample'); print('='*72)
 need = list(dict.fromkeys(BASE_COV+DISP+CLAS+ICT+SCH+
         ['AI_total','AI_deep','AI_sub','AI_grp','DIGPREP','SCH_AIPOL','SCH_AITRAIN','SCH_AI']))
 need = [c for c in need if c in q.columns]
 s = q.dropna(subset=need+['PV1SCIE','PV1CMPS']).copy()
-print(f'完整案例 n={len(s)} ({len(s)/len(q)*100:.1f}%), 学校={s.CNTSCHID.nunique()}')
+print(f'Complete cases n={len(s)} ({len(s)/len(q)*100:.1f}%), schools={s.CNTSCHID.nunique()}')
 
-# ---------- 模型集 ----------
+# ---------- Model set ----------
 MODELS = {
  'A1 AI分组(基础)':  BASE_COV+['AI_g2','AI_g3','AI_g4','AI_g5'],
  'A2 AI分组(全模型)': FULL+['AI_g2','AI_g3','AI_g4','AI_g5'],
@@ -124,22 +126,22 @@ res = pd.concat(rows, ignore_index=True)
 res.to_csv(os.path.join(OUT,'regression_main.csv'), index=False, encoding='utf-8-sig')
 
 # ---------- ICC ----------
-print('\n'+'='*72); print('多层结构 ICC (结果变量变异中学校层占比)'); print('='*72)
+print('\n'+'='*72); print('Multilevel ICC (school share of variance in the outcome)'); print('='*72)
 import statsmodels.formula.api as smf
 for yv in ['PV1SCIE','PV1CMPS']:
     d = s[[yv,'CNTSCHID']].rename(columns={yv:'y'}).dropna()
     m0 = smf.mixedlm('y ~ 1', d, groups=d['CNTSCHID']).fit()
     vb = float(m0.cov_re.iloc[0,0]); vw = float(m0.scale)
-    print(f'  {yv}: 学校间方差={vb:.1f}, 校内方差={vw:.1f}, ICC={vb/(vb+vw):.3f}')
+    print(f'  {yv}: between-school variance={vb:.1f}, within-school variance={vw:.1f}, ICC={vb/(vb+vw):.3f}')
 
-# ---------- 分组加权均值（描述性）----------
-print('\n'+'='*72); print('AI 使用分组 × 加权成绩'); print('='*72)
+# ---------- Weighted group means (descriptive) ----------
+print('\n'+'='*72); print('AI use group x weighted score'); print('='*72)
 def wm(x,w):
     m=~np.isnan(x); return np.average(x[m],weights=w[m]) if m.any() else np.nan
-lab5={1:'从不/几乎从不',2:'每年1-2次',3:'每月1-2次',4:'每周1-2次',5:'每天/几乎每天'}
+lab5={1:'never/almost never',2:'1-2 times a year',3:'1-2 times a month',4:'1-2 times a week',5:'every day/almost every day'}
 for yv in ['PV1SCIE','PV1CMPS']:
     print(f'\n{yv}:')
     for k in range(1,6):
         sub=s[s.AI_grp==k]
-        print(f'  {lab5[k]:12s} n={len(sub):5d}  加权均值={wm(sub[yv].values,sub.W_FSTUWT.values):6.1f}')
-print('\n已保存 outputs/regression_main.csv')
+        print(f'  {lab5[k]:12s} n={len(sub):5d}  weighted mean={wm(sub[yv].values,sub.W_FSTUWT.values):6.1f}')
+print('\nSaved outputs/regression_main.csv')

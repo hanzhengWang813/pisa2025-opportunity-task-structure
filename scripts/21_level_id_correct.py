@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-21. 统一协变量下的校间/校内识别（修正 19、20 的设定不一致）
+"""Between/within identification under a unified covariate set (fixes the inconsistency between 19 and 20).
 
-所有模型使用同一套学生层协变量 STU：
-  A 单层：            y ~ STU + AIz
-  B Mundlak：         y ~ STU + AI_within + AI_between
-  C 校内 FE：         y ~ STU + AI_within + 校固定效应   （应与 B 的 within 系数一致）
-  D 氛围交互三版：     单层 / Mundlak / FE
-  E 四用途：          单层 vs 校内（组均值中心化）
-
-输出 outputs/level_id.csv、outputs/uses_within.csv
+All models use the same student covariates STU:
+  A Single level:        y ~ STU + AIz
+  B Mundlak:             y ~ STU + AI_within + AI_between
+  C Within (school FE):  y ~ STU + AIz + school fixed effects
 """
 import os
 import sys
@@ -34,7 +29,7 @@ for c in ['ESCS', 'GRADE', 'JOYSCIE', 'EFFSCIE', 'SELFREG', 'COGACSC', 'TEACHSUP
 q['grade_z'] = q['GRADE_z']
 
 IT = ['ST438Q01DA', 'ST438Q02DA', 'ST438Q03DA', 'ST438Q04DA']
-LAB = dict(zip(IT, ['总结阅读材料', '初步研究新主题', '起草写作', '帮助学习']))
+LAB = dict(zip(IT, ['summarise source text', 'initial research on a new topic', 'draft writing', 'help learning']))
 for c in IT:
     q[c] = q[c].where(q[c] < 95)
 
@@ -46,7 +41,7 @@ q['AI_between_z'] = (q['AI_between'] - q['AI_between'].mean()) / q['AI_between']
 q['D_between'] = q['CNTSCHID'].map(q.groupby('CNTSCHID')['AI_daily'].mean())
 q['D_within'] = q['AI_daily'] - q['D_between']
 
-COMP = {'COGACSC': '认知激活', 'DISCLISCI': '纪律氛围', 'SELFREG': '自我调节', 'JOYSCIE': '科学兴趣'}
+COMP = {'COGACSC': 'cognitive activation', 'DISCLISCI': 'disciplinary climate', 'SELFREG': 'self-regulation', 'JOYSCIE': 'interest in science'}
 for c in COMP:
     q['SM_' + c] = q['CNTSCHID'].map(q.groupby('CNTSCHID')[c].mean())
     q['SM_' + c + '_z'] = (q['SM_' + c] - q['SM_' + c].mean()) / q['SM_' + c].std()
@@ -68,7 +63,7 @@ STU = ['female', 'escs', 'repeat', 'grade_z', 'JOYSCIE_z', 'EFFSCIE_z', 'SELFREG
 
 
 def fe_fit(df, cols, outcomes, cluster='CNTSCHID'):
-    """加权固定效应（校哑变量剥离），PV×BRR"""
+    """Weighted fixed effects (school dummies partialled out), PV x BRR"""
     dum = pd.get_dummies(df[cluster], drop_first=True, dtype=float)
     X = np.column_stack([np.ones(len(df))] + [df[c].values for c in cols] + [dum.values])
     keep = ['(截距)'] + cols
@@ -98,7 +93,7 @@ rows = []
 need = STU + ['AIz', 'AI_within', 'AI_between_z', 'AI_daily', 'D_within', 'D_between',
               'W_FSTUWT', 'CNTSCHID']
 s = q.dropna(subset=need).copy()
-print('样本 n=%d 学校=%d' % (len(s), s.CNTSCHID.nunique()))
+print('Sample n=%d schools=%d' % (len(s), s.CNTSCHID.nunique()))
 
 for oc in ['SCIE', 'CMPS']:
     eng = PISAEngine(s, 'PV', oc)
@@ -114,7 +109,7 @@ fe2 = fe_fit(s, STU + ['D_within'], ['SCIE', 'CMPS'])
 fe2['model'] = fe2.outcome + '|C 校内FE(每天)'
 rows.append(fe2)
 
-# ---------- D 氛围交互 ----------
+# ---------- D climate interaction ----------
 for oc in ['SCIE', 'CMPS']:
     eng = PISAEngine(s, 'PV', oc)
     rows.append(eng.fit(STU + ['AIz', 'SCH_CLIM_z', 'AIzxCLIM', 'SCH_MEAN_ESCS_z'],
@@ -131,31 +126,31 @@ res.to_csv(os.path.join(OUT, 'level_id.csv'), index=False, encoding='utf-8-sig')
 def star(p):
     return '***' if p < .001 else '**' if p < .01 else '*' if p < .05 else ''
 
-print('\n=== 强度：三种识别 ===')
+print('\n=== Intensity: three identification strategies ===')
 for m in [x for x in res.model.unique() if '强度' in x]:
     sub = res[(res.model == m) & res.term.isin(['AIz', 'AI_within', 'AI_between_z'])]
     print(' ', m)
     for _, r in sub.iterrows():
         print(f'    {r.term:14s} {r.b:8.2f} ({r.se:5.2f}) p={r.p:.4f}{star(r.p)}')
 
-print('\n=== 每天使用：三种识别 ===')
+print('\n=== Daily use: three identification strategies ===')
 for m in [x for x in res.model.unique() if '每天' in x]:
     sub = res[(res.model == m) & res.term.isin(['AI_daily', 'D_within', 'D_between'])]
     print(' ', m)
     for _, r in sub.iterrows():
         print(f'    {r.term:12s} {r.b:8.2f} ({r.se:5.2f}) p={r.p:.4f}{star(r.p)}')
 
-print('\n=== 氛围交互：三种识别 ===')
+print('\n=== Climate interaction: three identification strategies ===')
 for m in [x for x in res.model.unique() if '交互' in x]:
     sub = res[(res.model == m) & res.term.str.contains('CLIM|xCLIM|AIxCLIM')]
     print(' ', m)
     for _, r in sub.iterrows():
         print(f'    {r.term:14s} {r.b:8.2f} ({r.se:5.2f}) p={r.p:.4f}{star(r.p)}')
 
-# ---------- E 四用途：单层 vs 校内 ----------
+# ---------- E Four purposes: single level vs within-school ----------
 need2 = STU + ['ciz_' + c for c in IT] + ['bzz_' + c for c in IT] + ['W_FSTUWT', 'CNTSCHID']
 s2 = q.dropna(subset=need2).copy()
-print('\n四用途样本 n=%d' % len(s2))
+print('\nFour-purpose sample n=%d' % len(s2))
 rows = []
 for oc in ['SCIE', 'CMPS']:
     eng = PISAEngine(s2, 'PV', oc)
@@ -168,12 +163,12 @@ rows.append(fe4)
 u = pd.concat(rows, ignore_index=True)
 u.to_csv(os.path.join(OUT, 'uses_within.csv'), index=False, encoding='utf-8-sig')
 
-print('\n=== 四用途：单层 vs 校内FE（标准化）===')
+print('\n=== Four purposes: single level vs within-school FE (standardised) ===')
 for oc in ['SCIE', 'CMPS']:
     a = u[(u.model == f'{oc}|E1 四用途 单层')].set_index('term')
     b = u[(u.model == f'{oc}|E3 四用途 校内FE')].set_index('term')
     print(f'-- {oc}')
     for i, c in enumerate(IT):
         t = 'ciz_' + c
-        print(f'    {LAB[c]:8s} 单层 {a.loc[t,"b"]:7.2f} ({a.loc[t,"se"]:5.2f})  '
-              f'校内 {b.loc[t,"b"]:7.2f} ({b.loc[t,"se"]:5.2f}) p={b.loc[t,"p"]:.4f}')
+        print(f'    {LAB[c]:8s} single level {a.loc[t,"b"]:7.2f} ({a.loc[t,"se"]:5.2f})  '
+              f'within-school {b.loc[t,"b"]:7.2f} ({b.loc[t,"se"]:5.2f}) p={b.loc[t,"p"]:.4f}')

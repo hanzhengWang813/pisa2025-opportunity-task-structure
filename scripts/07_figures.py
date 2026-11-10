@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""07 生成图表 + 结果汇总表"""
+"""Generate the figures and the results summary tables.
+"""
 import pandas as pd, numpy as np, os, json, warnings
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ from paths import BASE  # repo root (override with PISA_BASE)
 OUT=os.path.join(BASE,'outputs'); os.makedirs(OUT,exist_ok=True)
 r=pd.read_csv(os.path.join(OUT,'regression_main.csv'))
 
-# ---------- 图1：阈值效应 ----------
+# ---------- Figure 1: threshold effect ----------
 a2=r[(r.model=='A2 AI分组(全模型)')&(r.outcome=='SCIE')]
 g=a2[a2.term.isin(['AI_g2','AI_g3','AI_g4','AI_g5'])].copy()
 labs=['每年\n1-2次','每月\n1-2次','每周\n1-2次','每天或\n几乎每天']
@@ -36,7 +37,7 @@ ax.text(.99,.03,'误差线为 95% 置信区间；已控制人口学、家庭SES�
         transform=ax.transAxes,ha='right',fontsize=7.2,color='#5F5E5A')
 plt.tight_layout(); plt.savefig(os.path.join(OUT,'fig1_threshold.png'),bbox_inches='tight'); plt.close()
 
-# ---------- 图2：用途构成净效应 ----------
+# ---------- Figure 2: net effect of use composition ----------
 items={'概括既定文本':'−18.2','查资料':'−9.5','写初稿':'+6.0','帮学习':'+15.0'}
 vals=[-18.23,-9.48,6.04,14.95]; ses_=[2.11,1.68,1.53,1.87]
 fig,ax=plt.subplots(figsize=(6.4,3.4))
@@ -57,7 +58,7 @@ ax.text(.99,.02,'四题同时入模、互为控制；绿色=负向，红色=正�
         transform=ax.transAxes,ha='right',fontsize=7.2,color='#5F5E5A')
 plt.tight_layout(); plt.savefig(os.path.join(OUT,'fig2_composition.png'),bbox_inches='tight'); plt.close()
 
-# ---------- 图3：调节效应 ----------
+# ---------- Figure 3: moderation ----------
 fig,axes=plt.subplots(1,2,figsize=(7.6,3.2))
 def panel(ax,mod_term,mod_name,title,txt):
     row=r[(r.model==mod_term)]
@@ -81,18 +82,18 @@ try:
     panel(axes[1],'B1 AI×数字素养','DL','学生数字素养的调节','交互 −1.6，p=.068')
     plt.tight_layout(); plt.savefig(os.path.join(OUT,'fig3_moderation.png'),bbox_inches='tight')
 except Exception as e:
-    print('fig3 跳过:',e)
+    print('fig3 skipped:',e)
 plt.close()
 
-# ---------- 汇总表 ----------
+# ---------- Summary table ----------
 def star(p): return '***' if p<.001 else '**' if p<.01 else '*' if p<.05 else ''
 tab=r[r.outcome=='SCIE'].copy()
 tab['sig']=tab.p.map(star)
 piv=tab.pivot_table(index='term',columns='model',values='b')
 piv.to_csv(os.path.join(OUT,'table_coefs_wide.csv'),encoding='utf-8-sig')
-print('图已生成: fig1_threshold.png, fig2_composition.png, fig3_moderation.png')
-print('汇总表: table_coefs_wide.csv')
-print('\n=== 关键系数一览（结果变量：科学素养）===')
+print('Figures written: fig1_threshold.png, fig2_composition.png, fig3_moderation.png')
+print('Summary table: table_coefs_wide.csv')
+print('\n=== Key coefficients (outcome: scientific literacy) ===')
 key=['AI_g5','AI_high','AI_total_z','AI_sq','ST438Q01DA','ST438Q02DA','ST438Q03DA','ST438Q04DA',
      'AI_deep_z','AI_sub_z','AIxDL','AIxSES','AIxTRN','AIxPOL','SCTRAIN_z','ICTINFO_z']
 for m in r.model.unique():

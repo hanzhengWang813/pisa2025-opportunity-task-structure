@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-19. 层别分解：AI 关联的「校间」与「校内」成分
-  B 校间：学校均值回归（校均 PV ~ 校均 AI + 校均氛围 + 交互）
-  W 校内：学校固定效应（PV ~ AIz + AIz×氛围 + 校固定效应）
-  两者之差即生态（构成）成分
-另：四个氛围成分分别入模（R5，修列创建顺序）
-输出 outputs/level_decomposition.csv、outputs/climate_components.csv
+"""Level decomposition: the between-school and within-school components of the AI association.
+
+  B Between: school-mean regression (mean PV ~ mean AI + mean climate + interaction)
+  W Within:  school fixed effects (PV ~ AIz + AIz:climate + school dummies)
+The difference between the two is the ecological (compositional) component.
 """
 import os
 import sys
@@ -50,10 +48,10 @@ STU = ['female', 'escs', 'repeat', 'grade_z', 'JOYSCIE_z', 'EFFSCIE_z', 'SELFREG
 need = STU + ['AIz', 'W_FSTUWT', 'CNTSCHID', 'SCH_CLIM_z', 'AIxCLIM',
               'SCH_MEAN_ESCS_z', 'SCH_AI_MEAN_z'] + cols + ['AIx_' + c for c in COMP]
 s = q.dropna(subset=[c for c in need if c in q.columns]).copy()
-print('样本 n=%d 学校=%d' % (len(s), s.CNTSCHID.nunique()))
+print('Sample n=%d schools=%d' % (len(s), s.CNTSCHID.nunique()))
 
-# ---------- W：学校固定效应（去掉与校哑变量共线的校层项） ----------
-print('\n=== W 校内（学校固定效应，PV×BRR）===')
+# ---------- W: school fixed effects (school-level terms collinear with the dummies are dropped) ----------
+print('\n=== W within-school (school fixed effects, PV x BRR) ===')
 dum = pd.get_dummies(s.CNTSCHID, drop_first=True, dtype=float)
 Xn = np.column_stack([np.ones(len(s)), s.AIz.values, s.AIxCLIM.values,
                       dum.values])
@@ -73,8 +71,8 @@ pv_ = 2 * stats.t.sf(np.abs(qb / se), df=dfree)
 fe = pd.DataFrame(dict(term=names, b=qb[:3], se=se[:3], p=pv_[:3], level='W 校内'))
 print(fe.to_string(index=False))
 
-# ---------- B：学校均值回归 ----------
-print('\n=== B 校间（学校均值，加权 OLS）===')
+# ---------- B: school-mean regression ----------
+print('\n=== B between-school (school means, weighted OLS) ===')
 sch = s.groupby('CNTSCHID').agg(
     n=('W_FSTUWT', 'size'), w=('W_FSTUWT', 'sum'),
     AI=('AIz', 'mean'), CLIM=('SCH_CLIM_z', 'mean'),
@@ -88,14 +86,14 @@ for pv in [f'PV{i}SCIE' for i in range(1, 11)]:
     pts.append(_wls(Xb, ym, sch.w.values))
 P = np.array(pts); qb = P.mean(axis=0)
 se = np.sqrt(np.mean([((p - qb) ** 2) for p in []], axis=0)) if False else None
-# 用 PV 间方差 + 解析 SE 近似
+# approximate with the between-PV variance + analytic SE
 se_anal = []
 for p in pts:
     r = p
 V = np.zeros(len(nb))
 for _ in range(1):
     pass
-# 解析 SE（以第一个 PV 的加权残差估计）
+# analytic SE (estimated from the weighted residuals of the first PV)
 ym = s.groupby('CNTSCHID')['PV1SCIE'].mean().reindex(sch.index).values
 res = ym - Xb @ pts[0]
 s2 = np.sum(sch.w.values * res ** 2) / (len(sch) - Xb.shape[1])
@@ -109,8 +107,8 @@ print(bi.to_string(index=False))
 dec = pd.concat([fe, bi], ignore_index=True)
 dec.to_csv(os.path.join(OUT, 'level_decomposition.csv'), index=False, encoding='utf-8-sig')
 
-# ---------- R5 四成分 ----------
-print('\n=== R5 四个氛围成分分别（含校均控制，SCIE）===')
+# ---------- R5 four components ----------
+print('\n=== R5 each climate component separately (with school-mean controls, SCIE) ===')
 eng = PISAEngine(s, 'PV', 'SCIE')
 r5 = []
 for c, lab in COMP.items():
@@ -118,13 +116,13 @@ for c, lab in COMP.items():
     df = eng.fit(STU + ['AIz', cc, 'AIx_' + c, 'SCH_MEAN_ESCS_z', 'SCH_AI_MEAN_z'], f'R5 {lab}')
     gi = df[df.term == 'AIx_' + c].iloc[0]
     gm = df[df.term == cc].iloc[0]
-    print(f'   {lab:8s} 交互 {gi.b:7.2f} ({gi.se:5.2f}) p={gi.p:.4f} | 主效应 {gm.b:7.2f} p={gm.p:.4f}')
+    print(f'   {lab:8s} interaction {gi.b:7.2f} ({gi.se:5.2f}) p={gi.p:.4f} | main effect {gm.b:7.2f} p={gm.p:.4f}')
     r5.append(dict(component=lab, b_int=gi.b, se_int=gi.se, p_int=gi.p, b_main=gm.b, p_main=gm.p))
 pd.DataFrame(r5).to_csv(os.path.join(OUT, 'climate_components.csv'), index=False, encoding='utf-8-sig')
 
-# ---------- 校间 / 校内 简单斜率对比 ----------
-print('\n=== 简单斜率对比（AI 斜率，分氛围高低）===')
+# ---------- between vs within: simple-slope comparison ----------
+print('\n=== Simple-slope comparison (AI slope, low vs high climate) ===')
 wb = dict(zip(names, qb))
-for lab, z in [('低氛围(−1SD)', -1), ('均值', 0), ('高氛围(+1SD)', 1)]:
-    print(f'   {lab:14s} 校内={wb["AIz"] + wb["AIxCLIM"]*z:+.2f}  '
-          f'校间={bi.set_index("term").loc["校均AI","b"] + bi.set_index("term").loc["校均AI×氛围","b"]*z:+.2f}')
+for lab, z in [('low climate (-1SD)', -1), ('mean', 0), ('high climate (+1SD)', 1)]:
+    print(f'   {lab:14s} within={wb["AIz"] + wb["AIxCLIM"]*z:+.2f}  '
+          f'between={bi.set_index("term").loc["校均AI","b"] + bi.set_index("term").loc["校均AI×氛围","b"]*z:+.2f}')

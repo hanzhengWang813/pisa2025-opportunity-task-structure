@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-"""06 诊断：AI 用途效应的设定敏感性
-C1 双维度 vs R4 单题结果方向矛盾，逐一拆解确认是否为共线性假象
+"""Diagnostics: specification sensitivity of the AI use-purpose effects.
+
+The two-dimension specification (C1) and the single-item specification (R4)
+point in opposite directions; this script decomposes the conflict to establish
+whether it is a collinearity artefact.
 """
 import pandas as pd, numpy as np, os, warnings
 from scipy import stats

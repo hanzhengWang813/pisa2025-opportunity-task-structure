@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-13. 构造并验证学校层构念（论文主线：学校能做什么）
+"""Construct and validate the school-level constructs (the paper's main thread).
 
-四类构念：
-  A 数字条件（有没有）      SC155Q01-Q05
-  B 教师能力与时间（会不会） SC155Q06-Q07
-  C 数字资源使用取向（怎么用）SC268（效率/监控 vs 赋能学生）
-  D 治理规范（管不管）      SC190（书面规定/指南/师生共定规则/网络素养课程）、SC190Q02 手机禁令
-  附：SC266 自主学习教学优先度、SC267 数字教学组织形态
-输出：data/qci_school.parquet（学生层 + 校层构念）、outputs/school_constructs.csv
+Four construct families:
+  A Digital conditions (availability)      SC155Q01-Q05
+  B Teacher capacity                       SC155Q06-Q07
+  C Purpose of digital use                 ...
+  D Rules and regulation                   ...
+Writes outputs/school_constructs.csv and the reliability diagnostics.
 """
 import os
 import numpy as np
@@ -19,14 +17,14 @@ from paths import BASE  # repo root (override with PISA_BASE)
 OUT = os.path.join(BASE, 'outputs')
 q = pd.read_parquet(os.path.join(BASE, 'data/qci_analysis.parquet'))
 
-# ---------- 缺失码清洗 ----------
+# ---------- Missing-code cleaning ----------
 def clean(df, cols, hi):
     for c in cols:
         if c in df.columns:
             df[c] = df[c].where(df[c] < hi)
     return df
 
-# 4 点评分（1-4），5 起为缺失/不适用
+# 4-point rating (1-4); values of 5 and above are missing / not applicable
 L4 = [f'SC155Q0{i}HA' for i in range(1, 11)] + [f'SC268Q0{i}DA' for i in range(1, 9)] + \
      [f'SC266Q0{i}DA' for i in range(1, 8)] + [f'SC267Q0{i}DA' for i in range(1, 8)]
 q = clean(q, L4, 5)
@@ -37,10 +35,10 @@ for c in YN:
     if c in q.columns:
         q[c] = (q[c] == 1).astype(float).where(q[c].notna())
 
-# ---------- 学校层子样本（每校一条） ----------
+# ---------- School-level subsample (one row per school) ----------
 sch = q.groupby('CNTSCHID').first()
 N_SCH = len(sch)
-print(f'学校数 = {N_SCH}')
+print(f'Number of schools = {N_SCH}')
 
 def alpha(df, cols):
     cols = [c for c in cols if c in df.columns]
@@ -58,32 +56,32 @@ def mk(df, cols, name, min_frac=0.7):
     v = d.mean(axis=1, skipna=True)
     v[d.notna().mean(axis=1) < min_frac] = np.nan
     a, n = alpha(df, cols)
-    print(f'  {name:14s} 题数={len(cols):2d}  α={a:.3f}  n={n:3d}  可用={v.notna().sum():3d}  '
-          f'均值={v.mean():.2f} sd={v.std():.2f}')
+    print(f'  {name:32s} items={len(cols):2d}  alpha={a:.3f}  n={n:3d}  usable={v.notna().sum():3d}  '
+          f'mean={v.mean():.2f} sd={v.std():.2f}')
     return v
 
-print('\n=== 构念信度 ===')
-sch['A_DIGCOND'] = mk(sch, [f'SC155Q0{i}HA' for i in [1, 2, 3, 4, 5]], 'A 数字条件')
-sch['B_TCHCAP'] = mk(sch, ['SC155Q06HA', 'SC155Q07HA'], 'B 教师能力时间')
-# SC268 六题相关 0.93，无法二分，改为单一「数字资源使用取向」总指数
-sch['C_DIGPURP'] = mk(sch, [f'SC268Q0{i}DA' for i in range(1, 7)], 'C 数字使用取向')
-sch['D_RULES'] = mk(sch, ['SC190Q01JA', 'SC190Q05JA', 'SC190Q06JA', 'SC190Q07JA', 'SC190Q08JA'], 'D 规范共定')
-sch['F_SRL'] = mk(sch, [f'SC266Q0{i}DA' for i in range(1, 7)], 'F 自主学习优先')
-sch['G_DIGORG'] = mk(sch, [f'SC267Q0{i}DA' for i in range(1, 7)], 'G 数字教学组织')
+print('\n=== Construct reliability ===')
+sch['A_DIGCOND'] = mk(sch, [f'SC155Q0{i}HA' for i in [1, 2, 3, 4, 5]], 'A Digital conditions')
+sch['B_TCHCAP'] = mk(sch, ['SC155Q06HA', 'SC155Q07HA'], 'B Teacher capacity and time')
+# Six SC268 items correlate at 0.93 and cannot be dichotomised; use one overall "purpose of digital use" index
+sch['C_DIGPURP'] = mk(sch, [f'SC268Q0{i}DA' for i in range(1, 7)], 'C Purpose of digital use')
+sch['D_RULES'] = mk(sch, ['SC190Q01JA', 'SC190Q05JA', 'SC190Q06JA', 'SC190Q07JA', 'SC190Q08JA'], 'D Co-designed rules')
+sch['F_SRL'] = mk(sch, [f'SC266Q0{i}DA' for i in range(1, 7)], 'F Priority on self-regulation')
+sch['G_DIGORG'] = mk(sch, [f'SC267Q0{i}DA' for i in range(1, 7)], 'G Organisation of digital teaching')
 
-# 单题构念（不做合成）
-sch['D_BAN'] = sch['SC190Q02JA']            # 手机禁令 1=有禁令
-sch['H_MONITOR'] = sch['SC267Q04DA']        # LMS 日志用于追踪
-sch['I_ENABLE'] = sch['SC268Q02DA']         # 单题：用数字资源强化自主学习能力
+# Single-item constructs (no composite)
+sch['D_BAN'] = sch['SC190Q02JA']            # phone ban, 1 = ban in place
+sch['H_MONITOR'] = sch['SC267Q04DA']        # LMS logs used for tracking
+sch['I_ENABLE'] = sch['SC268Q02DA']         # single item: digital resources used to strengthen self-regulated learning
 
-print('\n=== 手机禁令分布 ===')
+print('\n=== Phone-ban distribution ===')
 print(sch['D_BAN'].value_counts(dropna=False).to_string())
 
-# ---------- 校层构念之间相关 ----------
+# ---------- Correlations among school-level constructs ----------
 CC = ['A_DIGCOND', 'B_TCHCAP', 'C_DIGPURP', 'D_RULES', 'F_SRL', 'G_DIGORG']
-print('\n=== 校层构念相关矩阵 ===')
+print('\n=== School-level construct correlation matrix ===')
 print(sch[CC].corr().round(2).to_string())
-print('\n=== 校层构念 VIF（相互）===')
+print('\n=== School-level construct VIF (mutual) ===')
 from numpy.linalg import lstsq
 X = sch[CC].dropna()
 for c in CC:
@@ -95,16 +93,16 @@ for c in CC:
     r2 = 1 - ((y - Xo @ b) ** 2).sum() / ((y - y.mean()) ** 2).sum()
     print(f'  {c:10s} R2={r2:.3f} VIF={1/(1-r2):.2f}')
 
-# ---------- 学校层聚合（学生构成） ----------
+# ---------- School-level aggregation (student composition) ----------
 agg = q.groupby('CNTSCHID').agg(
     n_stu=('W_FSTUWT', 'size'),
     SCH_MEAN_ESCS=('ESCS', 'mean'),
     SCH_MEAN_AI=('AI_total', 'mean'),
 )
 sch = sch.join(agg)
-print(f'\n规模：学生/校 中位数={sch.n_stu.median():.0f}  校均ESCS={sch.SCH_MEAN_ESCS.mean():.2f}')
+print(f'\nSize: median students per school={sch.n_stu.median():.0f}  school-mean ESCS={sch.SCH_MEAN_ESCS.mean():.2f}')
 
-# ---------- 写回学生层 ----------
+# ---------- Write back to the student level ----------
 KEEP = ['A_DIGCOND', 'B_TCHCAP', 'C_DIGPURP', 'D_RULES', 'D_BAN',
         'F_SRL', 'G_DIGORG', 'H_MONITOR', 'I_ENABLE',
         'SCH_MEAN_ESCS', 'SCH_MEAN_AI', 'n_stu']
@@ -114,9 +112,9 @@ for c in KEEP:
         q[c] = q[c + '_new']
         q.drop(columns=[c + '_new'], inplace=True)
 q.to_parquet(os.path.join(BASE, 'data/qci_school.parquet'), index=False)
-print(f'\n已写入 data/qci_school.parquet  {q.shape}')
+print(f'\nWritten to data/qci_school.parquet  {q.shape}')
 
-# ---------- 校层构念汇总表 ----------
+# ---------- School-level construct summary table ----------
 rows = []
 for c in CC + ['D_BAN', 'H_MONITOR', 'I_ENABLE', 'SCH_MEAN_ESCS', 'SCH_MEAN_AI']:
     s = sch[c].dropna()
@@ -124,5 +122,5 @@ for c in CC + ['D_BAN', 'H_MONITOR', 'I_ENABLE', 'SCH_MEAN_ESCS', 'SCH_MEAN_AI']
                      p10=round(s.quantile(.1), 2), p90=round(s.quantile(.9), 2)))
 pd.DataFrame(rows).to_csv(os.path.join(OUT, 'school_constructs.csv'), index=False,
                           encoding='utf-8-sig')
-print('\n已写 outputs/school_constructs.csv')
+print('\nWrote outputs/school_constructs.csv')
 print(pd.DataFrame(rows).to_string(index=False))

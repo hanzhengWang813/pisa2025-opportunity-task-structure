@@ -63,12 +63,19 @@ python verification/verify_numbers.py        # writes verification/number_check.
 ├── docs/
 │   ├── REPRODUCTION.md       script-by-script map to manuscript sections
 │   ├── VERIFICATION.md       itemised audit result
+│   ├── LABELS.md             English glossary of the Chinese identifiers in outputs/
 │   └── DATA.md               how to obtain the PISA 2025 files
 ├── meta.pkl / meta_sch.pkl   variable dictionaries used by 01_extract_qci.py
 └── requirements.txt
 ```
 
 The PISA microdata are **not** included (OECD terms of use). See `docs/DATA.md`.
+
+Code, comments and documentation are in English. Column names in `outputs/*.csv`
+are English; a number of **cell values** kept the Chinese identifiers they were
+written with during development (`M0 空模型`, `SCIE|C 校内FE(每天)`, the A–Z
+construct codes). Those strings are literal join and audit keys, so renaming them
+would break the audit trail. `docs/LABELS.md` translates every one of them.
 
 ---
 
@@ -176,3 +183,21 @@ extracts. Any use of the data remains subject to the OECD terms of use.
 ## 8. License
 
 Code: MIT (`LICENSE`). Result tables and figures: CC BY 4.0.
+
+## 9. Before publishing
+
+Three placeholders still need the author's input:
+
+| Where | What to replace |
+|---|---|
+| `CITATION.cff`, `LICENSE` | `The authors` with the author list |
+| `CITATION.cff` | `USERNAME` with the GitHub account name |
+| `README.md` §7 | the `@article` key and author fields, once the paper is accepted |
+
+Upload with:
+
+```bash
+git remote add origin https://github.com/<username>/pisa2025-opportunity-task-structure.git
+git branch -M main
+git push -u origin main
+```

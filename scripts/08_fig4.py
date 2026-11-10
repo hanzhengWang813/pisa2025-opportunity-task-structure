@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""08 图4：每天使用组 vs 其余组 特征对比"""
+"""Figure 4: profile comparison between daily AI users and everyone else.
+"""
 import pandas as pd, numpy as np, os, warnings
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -47,4 +48,4 @@ ax.text(-.16,-.62,'每天组 n=384，其余组 n=11,515  ·  加权标准化均�
 ax.set_ylim(-0.85,len(tab)-0.4)
 plt.tight_layout(); plt.savefig(os.path.join(BASE,'outputs','fig4_daily_profile.png'),bbox_inches='tight'); plt.close()
 print(tab.round(2).to_string(index=False))
-print('已保存 outputs/fig4_daily_profile.png')
+print('Saved outputs/fig4_daily_profile.png')

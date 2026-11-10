@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-23. 重制图 6–10（修正版）
+"""Re-draw Figures 6-10 (corrected).
 
-fig6 方差分解 + 学校 AI 斜率的实证分布（真实校内斜率，非模拟）
-fig7 校长报告条件的调节扫描（中文标签，仅校层变量）
-fig8 每天使用与四用途：单层 vs 校内
-fig9 学校层主效应
-fig10 氛围调节的三种识别（生态假象）
+fig6  Variance decomposition plus the empirical distribution of school AI slopes
+      (actual within-school slopes, not simulated)
+fig7  Moderator scan of principal-reported conditions (school-level only)
 """
 import os
 import sys
@@ -51,7 +48,7 @@ ax.set_ylim(0, max(bt + be) * 1.18)
 for sp in ['top', 'right']:
     ax.spines[sp].set_visible(False)
 
-# 斜率方差：加入学校层变量后几乎不变
+# Slope variance: barely changes once school-level variables are added
 ax = axes[1]
 lad = pd.read_csv(os.path.join(OUT, 'mlm_ladder.csv'))
 lad = lad[lad.term == '__var__'].copy()
@@ -75,7 +72,7 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig6_variance.png'), dpi=215, bbox_inches='tight')
 plt.close()
-print('fig6 更新：tau11 %s，降幅 %.0f%%' % (np.round(vals, 1).tolist(), red))
+print('fig6 updated: tau11 %s, drop %.0f%%' % (np.round(vals, 1).tolist(), red))
 
 # ---------------- fig7 ----------------
 NAME = {
@@ -122,7 +119,7 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig7_moderator_forest.png'), dpi=215, bbox_inches='tight')
 plt.close()
-print('fig7 更新：%d 个校层候选，最小 p=%.3f' % (len(scan), scan.p_int.min()))
+print('fig7 updated: %d school-level candidates, min p=%.3f' % (len(scan), scan.p_int.min()))
 
 # ---------------- fig8 ----------------
 lvl = pd.read_csv(os.path.join(OUT, 'level_id.csv'))
@@ -174,7 +171,7 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig8_within_between.png'), dpi=215, bbox_inches='tight')
 plt.close()
-print('fig8 更新')
+print('fig8 updated')
 
 # ---------------- fig9 ----------------
 from pisa_engine import PISAEngine
@@ -227,7 +224,7 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig9_school_effects.png'), dpi=215, bbox_inches='tight')
 plt.close()
-print('fig9 更新')
+print('fig9 updated')
 
 # ---------------- fig10 ----------------
 fig, ax = plt.subplots(figsize=(6.4, 3.2))
@@ -253,4 +250,4 @@ for sp in ['top', 'right']:
 plt.tight_layout()
 plt.savefig(os.path.join(OUT, 'fig10_ecological.png'), dpi=215, bbox_inches='tight')
 plt.close()
-print('fig10 更新')
+print('fig10 updated')

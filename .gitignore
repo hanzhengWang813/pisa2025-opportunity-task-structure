@@ -1,0 +1,26 @@
+# Microdata — never commit PISA files
+data/*.sav
+data/*.parquet
+data/*.dta
+data/*.csv
+
+# Local paths
+.env
+PISA_BASE
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test scratch
+_eait/
+*.log

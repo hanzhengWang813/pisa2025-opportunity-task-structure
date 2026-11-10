@@ -1,0 +1,14 @@
+# Core analysis
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+pyreadstat>=1.2
+matplotlib>=3.7
+
+# Appendix A benchmark (26_estimator_check.py)
+statsmodels>=0.14
+
+# Appendix CFA table only (02b_cfa.py); no number in the manuscript depends on it.
+# Pin at or below 2.3.10: 2.3.11 removed a module-level import the script relies on.
+semopy<=2.3.10
+factor_analyzer>=0.5

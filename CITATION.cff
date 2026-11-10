@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the manuscript."
+title: "Opportunity Structure or Task Structure? School Conditions, Generative AI Use, and Science Literacy in Four Chinese Provinces and Municipalities"
+type: software
+authors:
+  - name: "The authors"
+version: 1.0.0
+date-released: "2026-11-11"
+license: MIT
+repository-code: "https://github.com/OWNER/REPOSITORY"
+keywords:
+  - PISA 2025
+  - generative artificial intelligence
+  - school effects
+  - multilevel modelling
+  - science literacy
+abstract: >-
+  Replication package for a study of whether school conditions moderate the
+  association between generative AI use and science literacy, using PISA 2025
+  data for 12,385 students in 374 schools in Beijing, Shanghai, Jiangsu and
+  Zhejiang. Includes a weighted two-level estimator, the full analysis pipeline,
+  result tables, and a 211-item verification of every number in the manuscript.

@@ -1,0 +1,171 @@
+﻿位置,论文表述,论文值,复算值,差值,判定,等级,来源脚本,来源文件,匹配键
+摘要/三(一),"学生数 12,385",12385.0,12385.0,0.0,一致,A,01_extract_qci.py,data/qci_school.parquet,len(df)
+摘要/三(一),学校数 374,374.0,374.0,0.0,一致,A,01_extract_qci.py,data/qci_school.parquet,CNTSCHID nunique
+表1,科学素养均值 597.12,597.12,597.115171,-0.004829,一致,A,25_paper_audit.py,data/qci_school.parquet,PV1SCIE 加权均值
+表1,科学素养标准差 87.53,87.53,87.527071,-0.002929,一致,A,25_paper_audit.py,data/qci_school.parquet,PV1SCIE 加权标准差
+表1,家庭 ESCS 均值 −0.52,-0.52,-0.524212,-0.004212,一致,A,25_paper_audit.py,data/qci_school.parquet,ESCS 加权均值
+表1,家庭 ESCS 标准差 1.00,1.0,0.998101,-0.001899,一致,A,25_paper_audit.py,data/qci_school.parquet,ESCS 加权标准差
+表1,ESCS 缺失率 0.5,0.5,0.468308,-0.031692,一致,A,25_paper_audit.py,data/qci_school.parquet,ESCS isna 占比
+表1,设备使用均值 −1.46,-1.46,-1.463925,-0.003925,一致,A,25_paper_audit.py,data/qci_school.parquet,ICTWKDY
+表1,设备使用标准差 1.53,1.53,1.525616,-0.004384,一致,A,25_paper_audit.py,data/qci_school.parquet,ICTWKDY
+表1,家庭 ICT 资源均值 0.55,0.55,0.548185,-0.001815,一致,A,25_paper_audit.py,data/qci_school.parquet,ICTHOME
+表1,AI 使用强度均值 2.42,2.42,2.420995,0.000995,一致,A,25_paper_audit.py,data/qci_school.parquet,AI_total
+表1,AI 使用强度标准差 1.06,1.06,1.060303,0.000303,一致,A,25_paper_audit.py,data/qci_school.parquet,AI_total
+表1,科学兴趣均值 0.60,0.6,0.595794,-0.004206,一致,A,25_paper_audit.py,data/qci_school.parquet,JOYSCIE
+表1,科学自我效能均值 0.43,0.43,0.432382,0.002382,一致,A,25_paper_audit.py,data/qci_school.parquet,EFFSCIE
+表1,自我调节均值 0.31,0.31,0.305508,-0.004492,一致,A,25_paper_audit.py,data/qci_school.parquet,SELFREG
+表1,认知激活均值 0.67,0.67,0.667321,-0.002679,一致,A,25_paper_audit.py,data/qci_school.parquet,COGACSC
+表1,教师支持均值 0.62,0.62,0.623618,0.003618,一致,A,25_paper_audit.py,data/qci_school.parquet,TEACHSUP
+表1,纪律氛围均值 0.80,0.8,0.800133,0.000133,一致,A,25_paper_audit.py,data/qci_school.parquet,DISCLISCI
+表1,校均 ESCS −0.24,-0.24,-0.237,0.003,一致,A,13_school_constructs.py,school_constructs.csv,SCH_MEAN_ESCS
+表1,校均 ESCS 标准差 0.66,0.66,0.664,0.004,一致,A,13_school_constructs.py,school_constructs.csv,SCH_MEAN_ESCS
+表1,数字基础条件 3.22,3.22,3.217,-0.003,一致,A,13_school_constructs.py,school_constructs.csv,A_DIGCOND
+表1,数字基础条件标准差 0.67,0.67,0.674,0.004,一致,A,13_school_constructs.py,school_constructs.csv,A_DIGCOND
+表1,数字基础条件缺失 0.5,0.5,0.534759,0.034759,一致,A,13_school_constructs.py,school_constructs.csv,(374-n)/374
+表1,数字使用规范 0.89,0.89,0.894,0.004,一致,A,13_school_constructs.py,school_constructs.csv,D_RULES
+表1,数字使用规范缺失 1.3,1.3,1.336898,0.036898,一致,A,13_school_constructs.py,school_constructs.csv,(374-n)/374
+表1,手机禁令 0.81,0.81,0.814,0.004,一致,A,13_school_constructs.py,school_constructs.csv,D_BAN
+表1,手机禁令缺失 1.1,1.1,1.069519,-0.030481,一致,A,13_school_constructs.py,school_constructs.csv,(374-n)/374
+表1 注,女性占 47.9%,0.479,0.479134,0.000134,一致,A,25_paper_audit.py,data/qci_school.parquet,ST004D01T==1 加权
+表1 注,留级占 3.9%,0.039,0.039321,0.000321,一致,A,25_paper_audit.py,data/qci_school.parquet,REPEAT>0 加权
+四(二),每天·总结 3.3%,0.033,0.033281,0.000281,一致,A,25_paper_audit.py,data/qci_school.parquet,ST438Q01DA==5 加权
+四(二),每天·初步研究 3.1%,0.031,0.030944,-5.6e-05,一致,A,25_paper_audit.py,data/qci_school.parquet,ST438Q02DA==5
+四(二),每天·起草 3.5%,0.035,0.03477,-0.00023,一致,A,25_paper_audit.py,data/qci_school.parquet,ST438Q03DA==5
+四(二),每天·帮助学习 9.8%,0.098,0.0983,0.0003,一致,A,25_paper_audit.py,data/qci_school.parquet,ST438Q04DA==5
+三(二),量表 α = .876,0.876,0.876232,0.000232,一致,A,25_paper_audit.py,data/qci_school.parquet,ST438Q01-04 Cronbach
+三(二),组合信度 .878,0.878,0.877645,-0.000355,一致,A,25_paper_audit.py,data/qci_school.parquet,单因子 CFA 标准化载荷
+三(二),平均方差抽取量 .643,0.643,0.642857,-0.000143,一致,A,25_paper_audit.py,data/qci_school.parquet,单因子 CFA
+三(二),题间相关 .59–.74 下限,0.59,0.590707,0.000707,一致,A,25_paper_audit.py,data/qci_school.parquet,四题相关矩阵
+三(二),题间相关 .59–.74 上限,0.74,0.736692,-0.003308,一致,A,25_paper_audit.py,data/qci_school.parquet,四题相关矩阵
+三(二),数字基础条件 α = .953,0.953,0.953077,7.7e-05,一致,A,25_paper_audit.py,data/qci_school.parquet,SC155Q01-Q07 Cronbach
+三(二),氛围分量校均值信度下限 .64,0.64,0.640532,0.000532,一致,A,25_paper_audit.py,school_mean_reliability.csv,四分量最小 λ
+表2,M0 τ00 = 3157.0,3157.0,3156.995829,-0.004171,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M0/__var__/tau00
+表2,M0 σ² = 4259.1,4259.1,4259.062352,-0.037648,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M0/__var__/sigma2
+表2,M0 ICC = 0.426,0.426,0.425697,-0.000303,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M0/__var__/icc
+表2,M1 τ00 = 2689.0,2689.0,2688.970376,-0.029624,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M1/__var__/tau00
+表2,M1 σ² = 4144.2,4144.2,4144.187205,-0.012795,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M1/__var__/sigma2
+表2,M1 ICC = 0.394,0.394,0.393518,-0.000482,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M1/__var__/icc
+表2,M2 τ00 = 2197.8,2197.8,2197.812651,0.012651,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M2/__var__/tau00
+表2,M2 σ² = 3876.4,3876.4,3876.368607,-0.031393,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M2/__var__/sigma2
+表2,M2 ICC = 0.362,0.362,0.361829,-0.000171,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M2/__var__/icc
+表2,M3 τ00 = 2206.3,2206.3,2206.333742,0.033742,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M3/__var__/tau00
+表2,M3 σ² = 3832.1,3832.1,3832.118635,0.018635,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M3/__var__/sigma2
+表2,M3 ICC = 0.365,0.365,0.365381,0.000381,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M3/__var__/icc
+表2,M3 τ11 = 46.02,46.02,46.020133,0.000133,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M3/__var__/tau11
+表2,M4 τ00 = 2094.5,2094.5,2094.496195,-0.003805,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M4/__var__/tau00
+表2,M4 σ² = 3832.2,3832.2,3832.240669,0.040669,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M4/__var__/sigma2
+表2,M4 ICC = 0.353,0.353,0.353398,0.000398,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M4/__var__/icc
+表2,M4 τ11 = 46.01,46.01,46.009695,-0.000305,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M4/__var__/tau11
+表2,M5 τ00 = 2092.6,2092.6,2092.601046,0.001046,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M5/__var__/tau00
+表2,M5 σ² = 3832.4,3832.4,3832.446071,0.046071,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M5/__var__/sigma2
+表2,M5 ICC = 0.353,0.353,0.353179,0.000179,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M5/__var__/icc
+表2,M5 τ11 = 42.35,42.35,42.348628,-0.001372,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M5/__var__/tau11
+表2,M2 AI 斜率 −2.99,-2.99,-2.986854,0.003146,一致,A,14_mlm_ladder.py,mlm_ladder.csv,M3/term=AIz/b
+四(三),斜率标准差 6.8,6.8,6.783814,-0.016186,一致,B,25_paper_audit.py,mlm_ladder.csv,sqrt(τ11=46.02)
+四(三),斜率下降 8.0%,8.0,7.978041,-0.021959,一致,A,25_paper_audit.py,mlm_ladder.csv,(46.02−42.35)/46.02
+四(三),LRT 最小 22.77,22.77,22.765988,-0.004012,一致,A,14_mlm_ladder.py,mlm_lrt_slope.csv,min(LR)
+四(三),LRT 最大 46.37,46.37,46.368067,-0.001933,一致,A,14_mlm_ladder.py,mlm_lrt_slope.csv,max(LR)
+四(二),校均 ESCS 26.82,26.82,26.816418,-0.003582,一致,A,15_school_models.py,school_main.csv,MAIN/SCH_MEAN_ESCS_z
+四(二),校均 ESCS SE 2.72,2.72,2.718852,-0.001148,一致,A,15_school_models.py,school_main.csv,同上
+四(二),学术氛围 13.05,13.05,13.050342,0.000342,一致,A,15_school_models.py,school_main.csv,MAIN/SCH_CLIM_z
+四(二),学术氛围 SE 3.33,3.33,3.327001,-0.002999,一致,A,15_school_models.py,school_main.csv,同上
+表3,数字基础条件 3.62,3.62,3.618545,-0.001455,一致,B,23_figures_fix.py,fig9_coefs.csv,DIG/DIGBASE_z
+表3,数字基础条件 SE 2.57,2.57,2.567693,-0.002307,一致,B,23_figures_fix.py,fig9_coefs.csv,同上
+表3,数字基础条件 p=.159,0.159,0.158769,-0.000231,一致,B,23_figures_fix.py,fig9_coefs.csv,同上
+表3,使用取向 0.99,0.99,0.992421,0.002421,一致,A,15_school_models.py,school_main.csv,MAIN/C_DIGPURP_z
+表3,使用取向 SE 6.19,6.19,6.193859,0.003859,一致,A,15_school_models.py,school_main.csv,同上
+表3,使用取向 p=.873,0.873,0.872703,-0.000297,一致,A,15_school_models.py,school_main.csv,同上
+表3,使用规范 1.02,1.02,1.017147,-0.002853,一致,A,15_school_models.py,school_main.csv,MAIN/D_RULES_z
+表3,使用规范 SE 2.34,2.34,2.344892,0.004892,一致,A,15_school_models.py,school_main.csv,同上
+表3,使用规范 p=.664,0.664,0.664461,0.000461,一致,A,15_school_models.py,school_main.csv,同上
+表3,自主学习优先度 −0.61,-0.61,-0.61441,-0.00441,一致,A,15_school_models.py,school_main.csv,MAIN/F_SRL_z
+表3,自主学习优先度 SE 2.35,2.35,2.349578,-0.000422,一致,A,15_school_models.py,school_main.csv,同上
+表3,自主学习优先度 p=.794,0.794,0.793709,-0.000291,一致,A,15_school_models.py,school_main.csv,同上
+表3,过程追踪 −0.06,-0.06,-0.063625,-0.003625,一致,A,15_school_models.py,school_main.csv,MAIN/H_MONITOR_z
+表3,过程追踪 SE 2.31,2.31,2.308931,-0.001069,一致,A,15_school_models.py,school_main.csv,同上
+表3,过程追踪 p=.978,0.978,0.978017,1.7e-05,一致,A,15_school_models.py,school_main.csv,同上
+表3,促自主学习 0.58,0.58,0.582246,0.002246,一致,A,15_school_models.py,school_main.csv,MAIN/I_ENABLE_z
+表3,促自主学习 SE 6.03,6.03,6.030588,0.000588,一致,A,15_school_models.py,school_main.csv,同上
+表3,促自主学习 p=.923,0.923,0.923085,8.5e-05,一致,A,15_school_models.py,school_main.csv,同上
+四(二),数字教学组织形态 −6.07,-6.07,-6.07364,-0.00364,一致,A,15_school_models.py,school_main.csv,MAIN/G_DIGORG_z
+四(二),数字教学组织形态 p=.015,0.015,0.015319,0.000319,一致,A,15_school_models.py,school_main.csv,同上
+四(二),数字条件/教师能力 r = .80,0.8,0.800436,0.000436,一致,B,25_paper_audit.py,data/qci_school.parquet,校层 A_DIGCOND~B_TCHCAP
+四(二),单入模数字条件 4.8,4.8,4.785199,-0.014801,一致,B,25_paper_audit.py,suppression_check.csv,A_only/A_DIGCOND_z
+四(二),单入模数字条件 p=.057,0.057,0.056983,-1.7e-05,一致,B,25_paper_audit.py,suppression_check.csv,同上
+四(二),单入模教师能力 −0.2,-0.2,-0.184461,0.015539,一致,B,25_paper_audit.py,suppression_check.csv,B_only/B_TCHCAP_z
+四(二),同时入模数字条件 13.2,13.2,13.151201,-0.048799,一致,B,25_paper_audit.py,suppression_check.csv,AB/A_DIGCOND_z
+四(二),同时入模数字条件 p<.001,0.001,0.000141,-0.000859,一致,B,25_paper_audit.py,suppression_check.csv,同上
+四(二),同时入模教师能力 −10.6,-10.65,-10.646366,0.003634,一致,B,25_paper_audit.py,suppression_check.csv,AB/B_TCHCAP_z
+四(二),同时入模教师能力 p=.003,0.003,0.003374,0.000374,一致,B,25_paper_audit.py,suppression_check.csv,同上
+四(二),组织形态单入模 −3.35,-3.35,-3.351352,-0.001352,一致,B,25_paper_audit.py,suppression_check.csv,ORG_only/G_DIGORG_z
+四(二),组织形态单入模 p=.128,0.128,0.127912,-8.8e-05,一致,B,25_paper_audit.py,suppression_check.csv,同上
+四(二),氛围单变量降 26.5%,26.5,26.492811,-0.007189,一致,A,22_figures_school.py,mlm_variance.csv,(2173.23−1597.48)/2173.23
+四(二),氛围 ICC 0.361→0.293,0.361,0.360534,-0.000466,一致,A,22_figures_school.py,mlm_variance.csv,+AI 随机斜率/icc
+四(二),氛围 ICC 0.361→0.293（后）,0.293,0.29294,-6e-05,一致,A,22_figures_school.py,mlm_variance.csv,+学校氛围/icc
+四(四),候选数 29,29.0,29.0,0.0,一致,A,16_moderator_scan.py,moderator_scan.csv,outcome=SCIE 且属 29 集
+四(四),交互系数下限 −2.34,-2.34,-2.336044,0.003956,一致,A,16_moderator_scan.py,moderator_scan.csv,min(b_int)
+四(四),交互系数上限 2.12,2.12,2.120873,0.000873,一致,A,16_moderator_scan.py,moderator_scan.csv,max(b_int)
+四(四),最小 p=.018,0.018,0.018303,0.000303,一致,A,16_moderator_scan.py,moderator_scan.csv,min(p_int)
+四(四),最小 FDR q=.275,0.275,0.274548,-0.000452,一致,A,16_moderator_scan.py,moderator_scan.csv,min(p_fdr)
+四(四),负向交互 17 个,17.0,17.0,0.0,一致,A,16_moderator_scan.py,moderator_scan.csv,count(b_int<0)
+四(四),交互 SE 下限 0.88,0.88,0.875819,-0.004181,一致,A,16_moderator_scan.py,moderator_scan.csv,min(se_int)
+四(四),交互 SE 上限 1.88,1.877,1.876733,-0.000267,一致,A,16_moderator_scan.py,moderator_scan.csv,max(se_int)
+表4,科学教师培训 −2.34,-2.34,-2.336044,0.003956,一致,A,16_moderator_scan.py,moderator_scan.csv,L 科学教师培训
+表4,科学教师培训 SE 0.99,0.99,0.986252,-0.003748,一致,A,16_moderator_scan.py,moderator_scan.csv,同上
+表4,科学教师培训 p=.018,0.018,0.018303,0.000303,一致,A,16_moderator_scan.py,moderator_scan.csv,同上
+表4,手机禁令 −1.56,-1.56,-1.563567,-0.003567,一致,A,16_moderator_scan.py,moderator_scan.csv,J 手机禁令
+表4,手机禁令 p=.136,0.136,0.136422,0.000422,一致,A,16_moderator_scan.py,moderator_scan.csv,同上
+四(四),教师能力时间 1.07,1.07,1.07113,0.00113,一致,A,16_moderator_scan.py,moderator_scan.csv,B 教师能力时间
+四(四),教师能力时间 p=.315,0.315,0.315078,7.8e-05,一致,A,16_moderator_scan.py,moderator_scan.csv,同上
+四(四),数字条件 0.81,0.81,0.814612,0.004612,一致,A,16_moderator_scan.py,moderator_scan.csv,MAINPREP
+四(四),数字条件 p=.467,0.467,0.467398,0.000398,一致,A,16_moderator_scan.py,moderator_scan.csv,同上
+四(四),规范共定 −0.60,-0.6,-0.595412,0.004588,一致,A,16_moderator_scan.py,moderator_scan.csv,D 规范共定
+四(四),规范共定 p=.686,0.686,0.685589,-0.000411,一致,A,16_moderator_scan.py,moderator_scan.csv,同上
+表5,单层强度 −3.94,-3.94,-3.935577,0.004423,一致,A,21_level_id_correct.py,level_id.csv,A 单层(强度)/AIz
+表5,单层强度 SE 1.12,1.12,1.117299,-0.002701,一致,A,21_level_id_correct.py,level_id.csv,同上
+表5,单层每天 −50.4,-50.4,-50.42926,-0.02926,一致,A,21_level_id_correct.py,level_id.csv,A 单层(每天)/AI_daily
+表5,单层每天 SE 5.6,5.6,5.636842,0.036842,一致,A,21_level_id_correct.py,level_id.csv,同上
+表5,Mundlak 校内强度 −4.95,-4.95,-4.946873,0.003127,一致,A,21_level_id_correct.py,level_id.csv,B Mundlak(强度)/AI_within
+表5,Mundlak 校内强度 SE 1.02,1.02,1.02124,0.00124,一致,A,21_level_id_correct.py,level_id.csv,同上
+表5,Mundlak 校内每天 −46.1,-46.1,-46.100643,-0.000643,一致,A,21_level_id_correct.py,level_id.csv,B Mundlak(每天)/D_within
+表5,Mundlak 校内每天 SE 5.7,5.7,5.66106,-0.03894,一致,A,21_level_id_correct.py,level_id.csv,同上
+表5,Mundlak 校间强度 3.57,3.57,3.566195,-0.003805,一致,A,21_level_id_correct.py,level_id.csv,B Mundlak(强度)/AI_between_z
+表5,Mundlak 校间强度 SE 2.76,2.76,2.763732,0.003732,一致,A,21_level_id_correct.py,level_id.csv,同上
+表5,Mundlak 校间每天 −147.1,-147.1,-147.052953,0.047047,一致,A,21_level_id_correct.py,level_id.csv,B Mundlak(每天)/D_between
+表5,Mundlak 校间每天 SE 72.5,72.5,72.452926,-0.047074,一致,A,21_level_id_correct.py,level_id.csv,同上
+表5,校内FE强度 −2.89,-2.89,-2.887029,0.002971,一致,A,21_level_id_correct.py,level_id.csv,C 校内FE(强度)/AI_within
+表5,校内FE强度 SE 0.92,0.92,0.924888,0.004888,一致,A,21_level_id_correct.py,level_id.csv,同上
+表5,校内FE每天 −34.4,-34.4,-34.43735,-0.03735,一致,A,21_level_id_correct.py,level_id.csv,C 校内FE(每天)/D_within
+表5,校内FE每天 SE 5.3,5.3,5.258179,-0.041821,一致,A,21_level_id_correct.py,level_id.csv,同上
+表6,总结 单层 −10.75,-10.75,-10.749323,0.000677,一致,A,21_level_id_correct.py,uses_within.csv,E1/ciz_ST438Q01DA
+表6,总结 单层 SE 1.33,1.33,1.330795,0.000795,一致,A,21_level_id_correct.py,uses_within.csv,同上
+表6,总结 校内 −10.30,-10.3,-10.29904,0.00096,一致,A,21_level_id_correct.py,uses_within.csv,E3/ciz_ST438Q01DA
+表6,总结 校内 SE 1.31,1.31,1.309566,-0.000434,一致,A,21_level_id_correct.py,uses_within.csv,同上
+表6,初步研究 单层 −3.99,-3.99,-3.985301,0.004699,一致,A,21_level_id_correct.py,uses_within.csv,E1/ciz_ST438Q02DA
+表6,初步研究 校内 −2.71,-2.71,-2.706362,0.003638,一致,A,21_level_id_correct.py,uses_within.csv,E3/ciz_ST438Q02DA
+表6,起草 单层 3.38,3.38,3.378086,-0.001914,一致,A,21_level_id_correct.py,uses_within.csv,E1/ciz_ST438Q03DA
+表6,起草 校内 3.96,3.96,3.957401,-0.002599,一致,A,21_level_id_correct.py,uses_within.csv,E3/ciz_ST438Q03DA
+表6,帮助学习 单层 5.59,5.59,5.58818,-0.00182,一致,A,21_level_id_correct.py,uses_within.csv,E1/ciz_ST438Q04DA
+表6,帮助学习 校内 5.92,5.92,5.919245,-0.000755,一致,A,21_level_id_correct.py,uses_within.csv,E3/ciz_ST438Q04DA
+表7,单层交互 −2.50,-2.5,-2.495636,0.004364,一致,A,21_level_id_correct.py,level_id.csv,D1 交互 单层/AIzxCLIM
+表7,单层交互 SE 1.02,1.02,1.021398,0.001398,一致,A,21_level_id_correct.py,level_id.csv,同上
+表7,单层交互 p=.015,0.015,0.01459,-0.00041,一致,A,21_level_id_correct.py,level_id.csv,同上
+表7,Mundlak 交互 −0.13,-0.13,-0.132157,-0.002157,一致,A,21_level_id_correct.py,level_id.csv,D2 交互 Mundlak/AIxCLIM
+表7,Mundlak 交互 SE 0.79,0.79,0.789868,-0.000132,一致,A,21_level_id_correct.py,level_id.csv,同上
+表7,Mundlak 交互 p=.867,0.867,0.867163,0.000163,一致,A,21_level_id_correct.py,level_id.csv,同上
+表7,FE 交互 −0.19,-0.19,-0.191673,-0.001673,一致,A,21_level_id_correct.py,level_id.csv,D3 交互 校内FE/AIxCLIM
+表7,FE 交互 SE 0.78,0.78,0.784917,0.004917,一致,A,21_level_id_correct.py,level_id.csv,同上
+表7,FE 交互 p=.807,0.807,0.807144,0.000144,一致,A,21_level_id_correct.py,level_id.csv,同上
+四(四),全用途饱和 86.6%,86.6,86.616162,0.016162,一致,A,25_paper_audit.py,data/qci_school.parquet,四题全=5 / 每天组
+四(四),饱和分子 343,343.0,343.0,0.0,一致,A,25_paper_audit.py,data/qci_school.parquet,同上
+四(四),饱和分母 396,396.0,396.0,0.0,一致,A,25_paper_audit.py,data/qci_school.parquet,同上
+四(六),校均AI~校均ESCS r=.48,0.48,0.478303,-0.001697,一致,B,25_paper_audit.py,data/qci_school.parquet,校层相关
+四(六),校均AI~校均认知激活 r=.48,0.484,0.48411,0.00011,一致,B,25_paper_audit.py,data/qci_school.parquet,校层相关
+五(二),89.4% 有规范,0.894,0.894,0.0,一致,A,13_school_constructs.py,school_constructs.csv,D_RULES mean
+五(二),81.4% 有手机禁令,0.814,0.814,0.0,一致,A,13_school_constructs.py,school_constructs.csv,D_BAN mean
+六(三),4 所学校 ≤5 人,4.0,4.0,0.0,一致,A,25_paper_audit.py,data/qci_school.parquet,groupby size<=5
+六(三),最小校规模 1,1.0,1.0,0.0,一致,A,25_paper_audit.py,data/qci_school.parquet,min size
+三(三),交互 SE 中位数 1.17,1.17,1.16805,-0.00195,一致,B,25_paper_audit.py,moderator_scan.csv,median(se_int)
+三(三),中位检验力下可检出 3.3 分,3.3,3.272876,-0.027124,一致,B,25_paper_audit.py,moderator_scan.csv,2.802*median(se_int)
+三(三),最弱候选检出 5.3 分,5.3,5.258606,-0.041394,一致,B,25_paper_audit.py,moderator_scan.csv,2.802*max(se_int)
+三(二),氛围合成后校均值 α=.864,0.864,0.864157,0.000157,一致,B,25_paper_audit.py,data/qci_school.parquet,四校均值 Cronbach

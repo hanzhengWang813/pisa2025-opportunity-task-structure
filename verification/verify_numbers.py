@@ -146,9 +146,9 @@ add("3.1", "Seven-item digital infrastructure model n", 12138,
 A5 = ["SC155Q%02dHA" % i for i in range(1, 6)]
 q["DIG5"] = q[A5].where(q[A5] < 95).mean(axis=1)
 add("3.1", "Section 4.7 subsample n", 11469, 11469, 0,
-    "11_oecd_claims.py (printed: 样本 n=11469)")
+    "11_oecd_claims.py (console output: sample n = 11,469)")
 add("3.1", "Section 4.7 subsample schools", 368, 368, 0,
-    "11_oecd_claims.py (printed: 学校 368)")
+    "11_oecd_claims.py (console output: schools = 368)")
 add("3.1", "Weighted mean science score (PV1)", 597.1, wmean(q.PV1SCIE.values, W), 0.05,
     "data/qci_school.parquet PV1SCIE, W_FSTUWT")
 add("3.1", "SD of science score (PV1)", 87.5, wsd(q.PV1SCIE.values, W), 0.05,
@@ -172,7 +172,7 @@ add("3.1", "SD of school-level ESCS", 0.66,
 # 3.2  Variables
 # ==========================================================================
 add("3.2", "Candidate school-level conditions", 29, 29, 0,
-    "moderator_scan.csv (30 rows for SCIE minus 'R 科学合作文化')",
+    "moderator_scan.csv (30 SCIE rows after dropping the 'R 科学合作文化' candidate)",
     "30 candidates in the raw scan; one WLE item excluded")
 add("3.2", "Indicators built from principal questionnaire / school data", 24,
     30 - 5 - 1, 0, "moderator_scan.csv", "30 minus 5 student aggregates minus 1 WLE item")

@@ -191,13 +191,19 @@ Three placeholders still need the author's input:
 | Where | What to replace |
 |---|---|
 | `CITATION.cff`, `LICENSE` | `The authors` with the author list |
-| `CITATION.cff` | `USERNAME` with the GitHub account name |
 | `README.md` §7 | the `@article` key and author fields, once the paper is accepted |
+
+The repository URL is already set to
+`https://github.com/hanzhengWang813/pisa2025-opportunity-task-structure`.
 
 Upload with:
 
+The remote `origin` is already configured, so a push is a single command:
+
 ```bash
-git remote add origin https://github.com/<username>/pisa2025-opportunity-task-structure.git
-git branch -M main
 git push -u origin main
 ```
+
+If the repository has not been created yet, create it first as an empty public repo
+named `pisa2025-opportunity-task-structure` (no README, no .gitignore, no licence —
+this package already contains them).
